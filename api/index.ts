@@ -43,7 +43,7 @@ async function calculateRuntime(
 }
 
 tool({
-  name: "calculateRuntime",
+  name: "calculate_experiment_runtime",
   description: "Calculates the estimated time to run an experiment.",
   parameters: [
     {
