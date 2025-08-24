@@ -6,14 +6,32 @@ import {
 import express from "express";
 import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
+import { generatePdfFromMarkdown, cleanupExpiredPdfs } from "./generate-pdf";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json()); // Add JSON middleware
 
+// Serve PDFs from /tmp directory
+app.use('/pdfs', express.static('/tmp', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+  }
+}));
+
 const toolsService = new ToolsService(app);
 const bearerToken = process.env.BEARER_TOKEN;
+
+// Run cleanup every hour
+setInterval(() => {
+  cleanupExpiredPdfs().catch(() => {
+    // Cleanup is best effort, don't crash the server
+  });
+}, 60 * 60 * 1000); // 1 hour in milliseconds
 
 // Add a root route to provide a status message.
 app.get("/", (req, res) => {
@@ -28,6 +46,11 @@ type CalculateRuntimeParams = {
   dailyVisitors: number;
 };
 
+type GeneratePdfParams = {
+  markdown: string;
+  filename?: string;
+};
+
 async function calculateRuntime(
   params: CalculateRuntimeParams
 ): Promise<{ days: number | null }> {
@@ -40,6 +63,12 @@ async function calculateRuntime(
     dailyVisitors
   );
   return { days };
+}
+
+async function generatePdf(
+  params: GeneratePdfParams
+): Promise<{ pdfUrl: string; expiresAt: string }> {
+  return await generatePdfFromMarkdown(params);
 }
 
 tool({
@@ -80,6 +109,25 @@ tool({
     },
   ],
 })(calculateRuntime);
+
+tool({
+  name: "generate_pdf_from_markdown",
+  description: "Converts markdown text to a PDF document and returns a download URL.",
+  parameters: [
+    {
+      name: "markdown",
+      type: ParameterType.String,
+      description: "The markdown content to convert to PDF",
+      required: true,
+    },
+    {
+      name: "filename",
+      type: ParameterType.String,
+      description: "Optional custom filename for the PDF (without .pdf extension)",
+      required: false,
+    },
+  ],
+})(generatePdf);
 
 if (bearerToken) {
   app.use("/tools/calculateRuntime", (req, res, next) => {
