@@ -2,7 +2,9 @@ This repository provides a complete, working example of an Optimizely Opal tool.
 
 ## Features
 
-- **Opal Tool:** Implements a runtime calculator using the `@optimizely-opal/opal-tools-sdk`.
+- **Opal Tools:** Implements multiple tools using the `@optimizely-opal/opal-tools-sdk`:
+  - Runtime calculator for experiment duration estimation
+  - Markdown to PDF converter with temporary file serving
 - **Express.js Server:** A lightweight server to host the tool.
 - **TypeScript:** Type-safe code for better maintainability.
 - **Bearer Token Authentication:** Secures the tool's execution endpoint.
@@ -22,8 +24,9 @@ The project follows the structure required by Vercel for serverless Node.js func
 ```
 /
 ├── api/
-│   └── index.ts      # Main application logic, Express app, and tool definition
-│   └── calculate-runtime.ts      # Function with actual tool caclculation logic
+│   └── index.ts      # Main application logic, Express app, and tool definitions
+│   └── calculate-runtime.ts      # Runtime calculation logic
+│   └── generate-pdf.ts      # PDF generation and cleanup logic
 ├── .gitignore
 ├── package.json
 ├── README.md
@@ -31,7 +34,9 @@ The project follows the structure required by Vercel for serverless Node.js func
 └── vercel.json         # Vercel deployment configuration
 ```
 
-- `api/index.ts`: The entry point for the Vercel serverless function. It contains the Express server setup, tool definition, and authentication middleware.
+- `api/index.ts`: The entry point for the Vercel serverless function. It contains the Express server setup, tool definitions, PDF file serving, and authentication middleware.
+- `api/calculate-runtime.ts`: Contains the runtime calculation algorithm for experiment duration estimation.
+- `api/generate-pdf.ts`: Handles markdown-to-PDF conversion using `md-to-pdf` and automatic cleanup of temporary files.
 - `vercel.json`: Configures Vercel to correctly handle the Express application as a single serverless function.
 
 ## Getting Started
@@ -112,9 +117,9 @@ Once your tool is deployed, you need to register it with Optimizely's Opal UI.
 
 5.  Click **Save**. Your tool will now appear in your list of tools and be available for use within Opal.
 
-## Using the Deployed Tool
+## Using the Deployed Tools
 
-Your tool has two main endpoints:
+Your deployed application provides multiple Opal tools with these endpoints:
 
 ### 1. Discovery Endpoint (Public)
 
@@ -123,11 +128,13 @@ Opal uses this endpoint to find your tool and learn about its parameters. It is 
 - **URL:** `https://<your-project-name>.vercel.app/discovery`
 - **Method:** `GET`
 
-You can open this URL in your browser to see the tool's JSON manifest.
+You can open this URL in your browser to see all available tools and their JSON manifests.
 
-### 2. Execution Endpoint (Secured)
+### 2. Tool Execution Endpoints (Secured)
 
-This is the endpoint you call to run the tool. It is protected by bearer token authentication.
+Both tools are protected by bearer token authentication.
+
+#### Runtime Calculator Tool
 
 - **URL:** `https://<your-project-name>.vercel.app/tools/calculate_experiment_runtime`
 - **Method:** `POST`
@@ -137,28 +144,63 @@ This is the endpoint you call to run the tool. It is protected by bearer token a
 - **Body (Example):**
   ```json
   {
-    "mde": 0.01,
+    "BCR": 0.2,
+    "MDE": 0.01,
     "sigLevel": 95,
-    "baseline_conversion_rate": 0.2,
-    "traffic_per_day": 5000,
-    "variations": 2
+    "numVariations": 2,
+    "dailyVisitors": 5000
   }
   ```
 
-#### Example `curl` Request
+#### PDF Generator Tool
 
+- **URL:** `https://<your-project-name>.vercel.app/tools/generate_pdf_from_markdown`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "markdown": "# My Document\n\nThis is **bold** text and *italic* text.\n\n## Code Example\n\n```javascript\nconsole.log('Hello World');\n```",
+    "filename": "my-document"
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "pdfUrl": "/pdfs/my-document.pdf",
+    "expiresAt": "2024-01-01T12:00:00.000Z"
+  }
+  ```
+
+**Note:** Generated PDFs are automatically cleaned up after 1 hour.
+
+#### Example `curl` Requests
+
+**Runtime Calculator:**
 ```bash
 curl --request POST \
   --url 'https://<your-project-name>.vercel.app/tools/calculate_experiment_runtime' \
   --header 'Authorization: Bearer your-secret-token-here' \
   --header 'Content-Type: application/json' \
   --data '{
-    "mde": 0.01,
-    "baseline_conversion_rate": 0.2,
-    "traffic_per_day": 10000,
-        "sigLevel": 95,
-    "variations": 2
+    "BCR": 0.2,
+    "MDE": 0.01,
+    "sigLevel": 95,
+    "numVariations": 2,
+    "dailyVisitors": 10000
   }'
 ```
 
-This will return the calculated runtime in days.
+**PDF Generator:**
+```bash
+curl --request POST \
+  --url 'https://<your-project-name>.vercel.app/tools/generate_pdf_from_markdown' \
+  --header 'Authorization: Bearer your-secret-token-here' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "markdown": "# Test Document\n\nThis is a **test** PDF generation.",
+    "filename": "test-document"
+  }'
+```
