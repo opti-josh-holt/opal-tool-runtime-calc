@@ -15,7 +15,7 @@ This repository provides a complete, working example of an Optimizely Opal tool.
 This sample project was built to codify several key lessons learned during development:
 
 1.  **Vercel Deployment:** Vercel requires a specific project structure for serverless functions. All backend code must reside in an `/api` directory.
-3.  **Selective Authentication:** A common pitfall is applying authentication middleware globally. This breaks the public `/discovery` endpoint that Opal relies on. Authentication must be applied _only_ to the specific tool execution route (e.g., `/tools/calculate_experiment_runtime`).
+2.  **Selective Authentication:** A common pitfall is applying authentication middleware globally. This breaks the public `/discovery` endpoint that Opal relies on. Authentication must be applied _only_ to the specific tool execution route (e.g., `/tools/calculate_experiment_runtime`).
 
 ## Project Structure
 
@@ -107,15 +107,15 @@ Once your tool is deployed, you need to register it with Optimizely's Opal UI.
 2.  Click the **Add tool registry** button in the top-right corner.
     <img width="1273" height="501" alt="image" src="https://github.com/user-attachments/assets/9deaa999-6993-4b8e-80cc-090636b818b6" />
 
-4.  Fill in the form with the following details:
+3.  Fill in the form with the following details:
 
     - **Registry Name:** A descriptive name for your tool registry. Conventionally, this is in `snake_case` (e.g., `experiment_runtime_calculation`).
     - **Discovery URL:** The URL to your deployed tool's discovery endpoint. For this project, it is `https://opal-tool-runtime-calc.vercel.app/discovery`.
     - **Bearer Token (Optional):** Enter the same secret token you configured as an environment variable in Vercel. This is required to authorize requests to the secure execution endpoint.
-    
+
     <img width="812" height="501" alt="image" src="https://github.com/user-attachments/assets/d8927549-b9a8-4052-b080-847e611f968f" />
 
-5.  Click **Save**. Your tool will now appear in your list of tools and be available for use within Opal.
+4.  Click **Save**. Your tool will now appear in your list of tools and be available for use within Opal.
 
 ## Using the Deployed Tools
 
@@ -160,12 +160,12 @@ Both tools are protected by bearer token authentication.
   - `Content-Type: application/json`
   - `Authorization: Bearer <your-secret-token-here>`
 - **Body (Example):**
-  ```json
+  ````json
   {
     "markdown": "# My Document\n\nThis is **bold** text and *italic* text.\n\n## Code Example\n\n```javascript\nconsole.log('Hello World');\n```",
     "filename": "my-document"
   }
-  ```
+  ````
 - **Response:**
   ```json
   {
@@ -174,11 +174,12 @@ Both tools are protected by bearer token authentication.
   }
   ```
 
-**Note:** Generated PDFs are automatically cleaned up after 1 hour.
+**Note:** Generated PDFs are automatically cleaned up after 1 hour for now.
 
 #### Example `curl` Requests
 
 **Runtime Calculator:**
+
 ```bash
 curl --request POST \
   --url 'https://<your-project-name>.vercel.app/tools/calculate_experiment_runtime' \
@@ -194,6 +195,7 @@ curl --request POST \
 ```
 
 **PDF Generator:**
+
 ```bash
 curl --request POST \
   --url 'https://<your-project-name>.vercel.app/tools/generate_pdf_from_markdown' \
