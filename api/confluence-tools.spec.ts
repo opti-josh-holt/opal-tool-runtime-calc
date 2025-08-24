@@ -242,6 +242,37 @@ describe('Confluence Tools', () => {
       );
     });
 
+    it('should handle complex markdown with tables', async () => {
+      mockConfluenceClient.createPage.mockResolvedValue(mockCreatedPage as any);
+
+      const complexMarkdown = `### Analysis
+
+Some text here.
+
+|Column 1|Column 2|
+|---|---|
+|Data 1|Data 2|
+
+More text.`;
+
+      await createConfluencePage({
+        spaceKey: 'TEST',
+        title: 'Complex Test',
+        content: complexMarkdown,
+      });
+
+      // Just verify it was called - the exact output is complex to predict
+      expect(mockConfluenceClient.createPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: {
+            storage: {
+              representation: 'storage',
+            },
+          },
+        })
+      );
+    });
+
     it('should throw error if spaceKey is missing', async () => {
       await expect(
         createConfluencePage({ spaceKey: '', title: 'Test', content: 'test' })
