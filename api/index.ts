@@ -252,7 +252,7 @@ tool({
     {
       name: "content",
       type: ParameterType.String,
-      description: "The new page content in Confluence storage format",
+      description: "The new page content in Markdown format (automatically converted to Confluence storage format)",
       required: true,
     },
   ],
@@ -277,7 +277,7 @@ tool({
     {
       name: "content",
       type: ParameterType.String,
-      description: "The page content in Confluence storage format",
+      description: "The page content in Markdown format (automatically converted to Confluence storage format)",
       required: true,
     },
     {

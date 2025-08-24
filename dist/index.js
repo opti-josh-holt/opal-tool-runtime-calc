@@ -211,7 +211,7 @@ async function generatePdf(params) {
         {
             name: "content",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: "The new page content in Confluence storage format",
+            description: "The new page content in Markdown format (automatically converted to Confluence storage format)",
             required: true,
         },
     ],
@@ -235,7 +235,7 @@ async function generatePdf(params) {
         {
             name: "content",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: "The page content in Confluence storage format",
+            description: "The page content in Markdown format (automatically converted to Confluence storage format)",
             required: true,
         },
         {

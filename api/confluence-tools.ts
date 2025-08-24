@@ -1,5 +1,80 @@
 import { confluenceClient, type ConfluencePage } from './confluence-client';
 
+function convertMarkdownToConfluenceStorage(markdown: string): string {
+  return markdown
+    // Convert headers
+    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+    
+    // Convert bold and italic
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    
+    // Convert lists
+    .replace(/^- (.*)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    
+    // Fix nested ul tags (remove duplicates)
+    .replace(/<\/ul>\s*<ul>/g, '')
+    
+    // Convert line breaks to paragraphs
+    .split('\n\n')
+    .map(paragraph => {
+      paragraph = paragraph.trim();
+      if (!paragraph) return '';
+      if (paragraph.startsWith('<h') || paragraph.startsWith('<ul') || paragraph.startsWith('<table')) {
+        return paragraph;
+      }
+      // Handle tables
+      if (paragraph.includes('|')) {
+        return convertTableToConfluence(paragraph);
+      }
+      return `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`;
+    })
+    .filter(p => p)
+    .join('');
+}
+
+function convertTableToConfluence(tableMarkdown: string): string {
+  const lines = tableMarkdown.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return `<p>${tableMarkdown}</p>`;
+  
+  const headers = lines[0].split('|').map(h => h.trim()).filter(h => h);
+  const separatorLine = lines[1];
+  const rows = lines.slice(2).map(line => line.split('|').map(cell => cell.trim()).filter(cell => cell));
+  
+  // Skip if not a valid table
+  if (!separatorLine.includes('---')) {
+    return `<p>${tableMarkdown}</p>`;
+  }
+  
+  let table = '<table><tbody>';
+  
+  // Header row
+  if (headers.length > 0) {
+    table += '<tr>';
+    headers.forEach(header => {
+      table += `<th>${header}</th>`;
+    });
+    table += '</tr>';
+  }
+  
+  // Data rows
+  rows.forEach(row => {
+    if (row.length > 0) {
+      table += '<tr>';
+      row.forEach(cell => {
+        table += `<td>${cell}</td>`;
+      });
+      table += '</tr>';
+    }
+  });
+  
+  table += '</tbody></table>';
+  return table;
+}
+
 export type ReadConfluencePageParams = {
   pageId?: string;
   spaceKey?: string;
@@ -99,7 +174,7 @@ export async function updateConfluencePage(params: UpdateConfluencePageParams): 
     type: existingPage.type,
     body: {
       storage: {
-        value: content,
+        value: convertMarkdownToConfluenceStorage(content),
         representation: 'storage',
       },
     },
@@ -137,7 +212,7 @@ export async function createConfluencePage(params: CreateConfluencePageParams): 
     },
     body: {
       storage: {
-        value: content,
+        value: convertMarkdownToConfluenceStorage(content),
         representation: 'storage',
       },
     },

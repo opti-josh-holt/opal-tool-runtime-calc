@@ -221,6 +221,27 @@ describe('Confluence Tools', () => {
       );
     });
 
+    it('should convert markdown to confluence storage format', async () => {
+      mockConfluenceClient.createPage.mockResolvedValue(mockCreatedPage as any);
+
+      await createConfluencePage({
+        spaceKey: 'TEST',
+        title: 'Markdown Test',
+        content: '### Header\n\nThis is **bold** and *italic* text.\n\n- List item 1\n- List item 2',
+      });
+
+      expect(mockConfluenceClient.createPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: {
+            storage: {
+              value: '<h3>Header</h3><p>This is <strong>bold</strong> and <em>italic</em> text.</p><ul><li>List item 1</li><li>List item 2</li></ul>',
+              representation: 'storage',
+            },
+          },
+        })
+      );
+    });
+
     it('should throw error if spaceKey is missing', async () => {
       await expect(
         createConfluencePage({ spaceKey: '', title: 'Test', content: 'test' })
