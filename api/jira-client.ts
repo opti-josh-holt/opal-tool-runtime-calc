@@ -1,5 +1,4 @@
 import axios from 'axios';
-import type { AxiosInstance } from 'axios';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -58,7 +57,7 @@ export type UpdateIssueRequest = {
 };
 
 class JiraClient {
-  private client: AxiosInstance;
+  private client: any;
   private baseUrl: string;
 
   constructor() {
