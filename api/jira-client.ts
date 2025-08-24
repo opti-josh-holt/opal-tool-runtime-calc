@@ -119,18 +119,21 @@ class JiraClient {
 
   async createIssue(issueData: CreateIssueRequest): Promise<{ key: string; id: string; self: string }> {
     try {
+      console.log('Creating issue with data:', JSON.stringify(issueData, null, 2));
       const response = await this.client.post('/issue', issueData);
       return response.data;
     } catch (error) {
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as any;
+        console.error('Jira API error response:', axiosError.response?.data);
         if (axiosError.response?.status === 401) {
           throw new Error('Unauthorized - check JIRA_PAT token');
         }
         if (axiosError.response?.status === 400) {
-          throw new Error(`Invalid issue data: ${axiosError.response?.data?.errorMessages?.join(', ') || 'Bad request'}`);
+          const errorDetails = axiosError.response?.data?.errors || axiosError.response?.data?.errorMessages || ['Bad request'];
+          throw new Error(`Invalid issue data: ${JSON.stringify(errorDetails)}`);
         }
-        throw new Error(`Jira API error: ${axiosError.response?.data?.errorMessages?.join(', ') || axiosError.message}`);
+        throw new Error(`Jira API error (${axiosError.response?.status}): ${JSON.stringify(axiosError.response?.data)}`);
       }
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

@@ -103,6 +103,9 @@ export async function createJiraIssue(params: CreateJiraIssueParams): Promise<Cr
     throw new Error('Summary is required and must be a string');
   }
 
+  // Extract username from email if provided (e.g., josh.holt@optimizely.com -> josh.holt)
+  const assigneeUsername = assignee?.includes('@') ? assignee.split('@')[0] : assignee;
+
   const issueData = {
     fields: {
       project: {
@@ -113,7 +116,7 @@ export async function createJiraIssue(params: CreateJiraIssueParams): Promise<Cr
         name: issueType,
       },
       ...(description && { description }),
-      ...(assignee && { assignee: { name: assignee } }),
+      ...(assigneeUsername && { assignee: { name: assigneeUsername } }),
       ...additionalFields,
     },
   };
