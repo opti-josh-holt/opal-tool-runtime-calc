@@ -20,7 +20,7 @@ async function readConfluencePage(params) {
         if (typeof spaceKey !== 'string' || typeof title !== 'string') {
             throw new Error('Space key and title must be strings');
         }
-        page = await confluence_client_1.confluenceClient.getPageByTitle(spaceKey, title);
+        page = await confluence_client_1.confluenceClient.getPageByTitle(spaceKey.toUpperCase(), title);
     }
     return {
         id: page.id,
@@ -78,7 +78,7 @@ async function createConfluencePage(params) {
         type: 'page',
         title,
         space: {
-            key: spaceKey,
+            key: spaceKey.toUpperCase(),
         },
         body: {
             storage: {

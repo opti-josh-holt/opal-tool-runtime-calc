@@ -70,10 +70,18 @@ describe('Confluence Tools', () => {
     it('should read page by space and title', async () => {
       mockConfluenceClient.getPageByTitle.mockResolvedValue(mockPage);
 
-      const result = await readConfluencePage({ spaceKey: 'TEST', title: 'Test Page' });
+      const result = await readConfluencePage({ spaceKey: 'test', title: 'Test Page' });
 
       expect(mockConfluenceClient.getPageByTitle).toHaveBeenCalledWith('TEST', 'Test Page');
       expect(result.title).toBe('Test Page');
+    });
+
+    it('should capitalize space key when reading by space and title', async () => {
+      mockConfluenceClient.getPageByTitle.mockResolvedValue(mockPage);
+
+      await readConfluencePage({ spaceKey: 'team', title: 'Test Page' });
+
+      expect(mockConfluenceClient.getPageByTitle).toHaveBeenCalledWith('TEAM', 'Test Page');
     });
 
     it('should throw error if neither pageId nor spaceKey+title provided', async () => {
@@ -156,7 +164,7 @@ describe('Confluence Tools', () => {
       mockConfluenceClient.createPage.mockResolvedValue(mockCreatedPage as any);
 
       const result = await createConfluencePage({
-        spaceKey: 'TEST',
+        spaceKey: 'test',
         title: 'New Page',
         content: '<p>New page content</p>',
       });
@@ -184,7 +192,7 @@ describe('Confluence Tools', () => {
       mockConfluenceClient.createPage.mockResolvedValue(mockCreatedPage as any);
 
       await createConfluencePage({
-        spaceKey: 'TEST',
+        spaceKey: 'test',
         title: 'Child Page',
         content: '<p>Child content</p>',
         parentPageId: '123456',
@@ -197,6 +205,22 @@ describe('Confluence Tools', () => {
       );
     });
 
+    it('should capitalize space key when creating page', async () => {
+      mockConfluenceClient.createPage.mockResolvedValue(mockCreatedPage as any);
+
+      await createConfluencePage({
+        spaceKey: 'team',
+        title: 'New Page',
+        content: '<p>Content</p>',
+      });
+
+      expect(mockConfluenceClient.createPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          space: { key: 'TEAM' },
+        })
+      );
+    });
+
     it('should throw error if spaceKey is missing', async () => {
       await expect(
         createConfluencePage({ spaceKey: '', title: 'Test', content: 'test' })
@@ -205,13 +229,13 @@ describe('Confluence Tools', () => {
 
     it('should throw error if title is missing', async () => {
       await expect(
-        createConfluencePage({ spaceKey: 'TEST', title: '', content: 'test' })
+        createConfluencePage({ spaceKey: 'test', title: '', content: 'test' })
       ).rejects.toThrow('Title is required and must be a string');
     });
 
     it('should throw error if content is missing', async () => {
       await expect(
-        createConfluencePage({ spaceKey: 'TEST', title: 'Test', content: '' })
+        createConfluencePage({ spaceKey: 'test', title: 'Test', content: '' })
       ).rejects.toThrow('Content is required and must be a string');
     });
   });
