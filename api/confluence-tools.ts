@@ -1,5 +1,17 @@
 import { confluenceClient, type ConfluencePage } from './confluence-client';
 
+function escapeXmlSpecialChars(text: string): string {
+  return text
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/–/g, '-')         // Convert en-dash to regular dash
+    .replace(/—/g, '-')         // Convert em-dash to regular dash  
+    .replace(/"/g, '"')         // Convert smart quotes to regular quotes
+    .replace(/"/g, '"')
+    .replace(/'/g, "'")
+    .replace(/'/g, "'");
+}
+
 function convertMarkdownToConfluenceStorage(markdown: string): string {
   // First, let's process the markdown line by line to identify blocks more accurately
   const lines = markdown.split('\n');
@@ -78,10 +90,10 @@ function convertMarkdownToConfluenceStorage(markdown: string): string {
           convertedLines.push(headerConverted);
         } else if (trimmedLine) {
           // This is content after a header
-          const formatted = trimmedLine
+          const cleaned = escapeXmlSpecialChars(trimmedLine);
+          const formatted = cleaned
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-            .replace(/"/g, '&quot;');
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
           convertedLines.push(`<p>${formatted}</p>`);
         }
       }
@@ -104,7 +116,8 @@ function convertMarkdownToConfluenceStorage(markdown: string): string {
         .filter(line => line.startsWith('- '))
         .map(line => {
           const content = line.substring(2); // Remove "- "
-          const formatted = content
+          const cleaned = escapeXmlSpecialChars(content);
+          const formatted = cleaned
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
             .replace(/\*([^*]+)\*/g, '<em>$1</em>');
           return `<li>${formatted}</li>`;
@@ -118,10 +131,10 @@ function convertMarkdownToConfluenceStorage(markdown: string): string {
     }
     
     // Handle regular paragraphs
-    const formatted = trimmed
+    const cleaned = escapeXmlSpecialChars(trimmed);
+    const formatted = cleaned
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/"/g, '&quot;'); // Escape quotes for XML
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>');
     
     const lines = formatted.split('\n').map(line => line.trim()).filter(line => line);
     if (lines.length > 0) {
@@ -164,10 +177,11 @@ function convertTableToConfluence(tableMarkdown: string): string {
   if (headers.length > 0) {
     table += '<tr>';
     headers.forEach(header => {
-      const cleanHeader = header
+      const cleaned = escapeXmlSpecialChars(header);
+      const formatted = cleaned
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-      table += `<th>${cleanHeader}</th>`;
+      table += `<th>${formatted}</th>`;
     });
     table += '</tr>';
   }
@@ -179,11 +193,11 @@ function convertTableToConfluence(tableMarkdown: string): string {
       if (cells.length > 0) {
         table += '<tr>';
         cells.forEach(cell => {
-          const cleanCell = cell
+          const cleaned = escapeXmlSpecialChars(cell);
+          const formatted = cleaned
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-            .replace(/"/g, '&quot;');
-          table += `<td>${cleanCell}</td>`;
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+          table += `<td>${formatted}</td>`;
         });
         table += '</tr>';
       }
