@@ -63,11 +63,12 @@ The project follows the structure required by Vercel for serverless Node.js func
     ```
 
 3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project. This file is ignored by Git. Add your desired bearer token:
+    Create a `.env` file in the root of the project. This file is ignored by Git. Add your configuration:
 
     ```
     # .env
     BEARER_TOKEN="your-secret-token-here"
+    BASE_URL="https://your-project-name.vercel.app"
     ```
 
 4.  **Run the development server:**
@@ -92,8 +93,10 @@ The project follows the structure required by Vercel for serverless Node.js func
 3.  **Configure Environment Variables:**
 
     - In your new Vercel project's settings, navigate to the "Environment Variables" section.
-    - Add a new variable with the key `BEARER_TOKEN` and the value you want to use for production.
-    - **Important:** Ensure this token is strong and kept secret.
+    - Add these environment variables:
+      - `BEARER_TOKEN`: The value you want to use for production authentication (keep this secret!)
+      - `BASE_URL`: Your full Vercel app URL (e.g., `https://your-project-name.vercel.app`)
+    - **Important:** Ensure the bearer token is strong and kept secret.
 
 4.  **Deploy:**
     Vercel will automatically trigger a deployment. After a few moments, your tool will be live!
@@ -169,12 +172,14 @@ Both tools are protected by bearer token authentication.
 - **Response:**
   ```json
   {
-    "pdfUrl": "/pdfs/my-document.pdf",
+    "pdfUrl": "https://your-project-name.vercel.app/pdfs/my-document.pdf",
     "expiresAt": "2024-01-01T12:00:00.000Z"
   }
   ```
 
-**Note:** Generated PDFs are automatically cleaned up after 1 hour for now.
+**Notes:** 
+- Generated PDFs are automatically cleaned up after 1 hour for now.
+- The `pdfUrl` returns a full absolute URL to ensure it works properly with Opal.
 
 #### Example `curl` Requests
 
