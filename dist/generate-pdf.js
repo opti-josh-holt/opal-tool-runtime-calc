@@ -20,7 +20,10 @@ async function generatePdfFromMarkdown(params) {
         // Configure Chromium for Vercel
         const executablePath = await chromium_1.default.executablePath();
         console.log('Chromium executable path:', executablePath);
-        // Create custom CSS for Optimizely branding
+        // Read the Optimizely SVG logo
+        const logoPath = path_1.default.join(__dirname, 'assets', 'optimizely_logo.svg');
+        const logoSvg = await fs_1.promises.readFile(logoPath, 'utf8');
+        // Create custom CSS for professional document styling
         const customCSS = `
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -32,36 +35,13 @@ async function generatePdfFromMarkdown(params) {
       .optimizely-header {
         display: flex;
         align-items: center;
-        padding: 20px 0;
+        padding: 20px 0 30px 0;
         margin-bottom: 30px;
         border-bottom: 2px solid #eee;
       }
-      .optimizely-logo {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-      }
-      .logo-icon {
-        width: 50px;
-        height: 50px;
-        position: relative;
-      }
-      .circle {
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        border-radius: 50% 50% 0 50%;
-      }
-      .circle-1 { background: #7C3AED; top: 0; left: 15px; transform: rotate(-45deg); }
-      .circle-2 { background: #FB923C; top: 0; right: 0; transform: rotate(45deg); }
-      .circle-3 { background: #2563EB; bottom: 0; left: 0; transform: rotate(-135deg); }
-      .circle-4 { background: #10B981; bottom: 0; left: 15px; transform: rotate(135deg); }
-      .circle-5 { background: #06B6D4; bottom: 15px; left: 30px; transform: rotate(225deg); }
-      .logo-text {
-        font-size: 32px;
-        font-weight: 600;
-        color: #000;
-        letter-spacing: -0.5px;
+      .optimizely-header svg {
+        height: 40px;
+        width: auto;
       }
       h1, h2, h3, h4, h5, h6 {
         color: #1a1a1a;
@@ -71,11 +51,14 @@ async function generatePdfFromMarkdown(params) {
       h1 { font-size: 28px; }
       h2 { font-size: 24px; }
       h3 { font-size: 20px; }
+      h4 { font-size: 18px; }
+      p { margin-bottom: 12px; }
       code {
         background: #f5f5f5;
         padding: 2px 6px;
         border-radius: 3px;
         font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 0.9em;
       }
       pre {
         background: #f5f5f5;
@@ -84,23 +67,39 @@ async function generatePdfFromMarkdown(params) {
         overflow-x: auto;
         margin: 16px 0;
       }
+      pre code {
+        background: none;
+        padding: 0;
+      }
       ul, ol { padding-left: 24px; margin-bottom: 12px; }
       li { margin-bottom: 6px; }
       strong { font-weight: 600; }
+      em { font-style: italic; }
+      blockquote {
+        border-left: 4px solid #ddd;
+        margin: 16px 0;
+        padding-left: 16px;
+        color: #666;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 16px 0;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+      }
     `;
         // Prepend the Optimizely header to the markdown content
         const markdownWithHeader = `
 <div class="optimizely-header">
-  <div class="optimizely-logo">
-    <div class="logo-icon">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
-      <div class="circle circle-4"></div>
-      <div class="circle circle-5"></div>
-    </div>
-    <div class="logo-text">Optimizely</div>
-  </div>
+  ${logoSvg}
 </div>
 
 ${markdown}`;
