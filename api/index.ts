@@ -9,6 +9,8 @@ import { estimateRunTimeDays } from "./calculate-runtime";
 import { generatePdfFromMarkdown, cleanupExpiredPdfs } from "./generate-pdf";
 import { readJiraIssue, updateJiraIssue, createJiraIssue } from "./jira-tools";
 import type { ReadJiraIssueParams, UpdateJiraIssueParams, CreateJiraIssueParams } from "./jira-tools";
+import { readConfluencePage, updateConfluencePage, createConfluencePage } from "./confluence-tools";
+import type { ReadConfluencePageParams, UpdateConfluencePageParams, CreateConfluencePageParams } from "./confluence-tools";
 
 dotenv.config();
 
@@ -205,6 +207,87 @@ tool({
     },
   ],
 })(createJiraIssue);
+
+tool({
+  name: "read_confluence_page",
+  description: "Reads a Confluence page by ID or by space and title.",
+  parameters: [
+    {
+      name: "pageId",
+      type: ParameterType.String,
+      description: "The Confluence page ID",
+      required: false,
+    },
+    {
+      name: "spaceKey",
+      type: ParameterType.String,
+      description: "The space key (required if using title)",
+      required: false,
+    },
+    {
+      name: "title",
+      type: ParameterType.String,
+      description: "The page title (required if using spaceKey)",
+      required: false,
+    },
+  ],
+})(readConfluencePage);
+
+tool({
+  name: "update_confluence_page",
+  description: "Updates a Confluence page with new content.",
+  parameters: [
+    {
+      name: "pageId",
+      type: ParameterType.String,
+      description: "The Confluence page ID",
+      required: true,
+    },
+    {
+      name: "title",
+      type: ParameterType.String,
+      description: "Optional new title for the page",
+      required: false,
+    },
+    {
+      name: "content",
+      type: ParameterType.String,
+      description: "The new page content in Confluence storage format",
+      required: true,
+    },
+  ],
+})(updateConfluencePage);
+
+tool({
+  name: "create_confluence_page",
+  description: "Creates a new Confluence page in the specified space.",
+  parameters: [
+    {
+      name: "spaceKey",
+      type: ParameterType.String,
+      description: "The space key where the page should be created",
+      required: true,
+    },
+    {
+      name: "title",
+      type: ParameterType.String,
+      description: "The page title",
+      required: true,
+    },
+    {
+      name: "content",
+      type: ParameterType.String,
+      description: "The page content in Confluence storage format",
+      required: true,
+    },
+    {
+      name: "parentPageId",
+      type: ParameterType.String,
+      description: "Optional parent page ID to create as a child page",
+      required: false,
+    },
+  ],
+})(createConfluencePage);
 
 if (bearerToken) {
   app.use("/tools/calculateRuntime", (req, res, next) => {

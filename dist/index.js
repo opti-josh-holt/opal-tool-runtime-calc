@@ -9,6 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const calculate_runtime_1 = require("./calculate-runtime");
 const generate_pdf_1 = require("./generate-pdf");
 const jira_tools_1 = require("./jira-tools");
+const confluence_tools_1 = require("./confluence-tools");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); // Add JSON middleware
@@ -119,7 +120,7 @@ async function generatePdf(params) {
         },
         {
             name: "fields",
-            type: opal_tools_sdk_1.ParameterType.Object,
+            type: opal_tools_sdk_1.ParameterType.Dictionary,
             description: "Object containing field updates (e.g., {summary: 'New title', description: 'New description'})",
             required: true,
         },
@@ -161,12 +162,90 @@ async function generatePdf(params) {
         },
         {
             name: "additionalFields",
-            type: opal_tools_sdk_1.ParameterType.Object,
+            type: opal_tools_sdk_1.ParameterType.Dictionary,
             description: "Optional additional fields to set on the issue",
             required: false,
         },
     ],
 })(jira_tools_1.createJiraIssue);
+(0, opal_tools_sdk_1.tool)({
+    name: "read_confluence_page",
+    description: "Reads a Confluence page by ID or by space and title.",
+    parameters: [
+        {
+            name: "pageId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Confluence page ID",
+            required: false,
+        },
+        {
+            name: "spaceKey",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The space key (required if using title)",
+            required: false,
+        },
+        {
+            name: "title",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The page title (required if using spaceKey)",
+            required: false,
+        },
+    ],
+})(confluence_tools_1.readConfluencePage);
+(0, opal_tools_sdk_1.tool)({
+    name: "update_confluence_page",
+    description: "Updates a Confluence page with new content.",
+    parameters: [
+        {
+            name: "pageId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Confluence page ID",
+            required: true,
+        },
+        {
+            name: "title",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "Optional new title for the page",
+            required: false,
+        },
+        {
+            name: "content",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The new page content in Confluence storage format",
+            required: true,
+        },
+    ],
+})(confluence_tools_1.updateConfluencePage);
+(0, opal_tools_sdk_1.tool)({
+    name: "create_confluence_page",
+    description: "Creates a new Confluence page in the specified space.",
+    parameters: [
+        {
+            name: "spaceKey",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The space key where the page should be created",
+            required: true,
+        },
+        {
+            name: "title",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The page title",
+            required: true,
+        },
+        {
+            name: "content",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The page content in Confluence storage format",
+            required: true,
+        },
+        {
+            name: "parentPageId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "Optional parent page ID to create as a child page",
+            required: false,
+        },
+    ],
+})(confluence_tools_1.createConfluencePage);
 if (bearerToken) {
     app.use("/tools/calculateRuntime", (req, res, next) => {
         const authHeader = req.headers.authorization;

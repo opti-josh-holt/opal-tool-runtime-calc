@@ -29,14 +29,15 @@ class JiraClient {
             return response.data;
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                if (error.response?.status === 404) {
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error;
+                if (axiosError.response?.status === 404) {
                     throw new Error(`Issue '${issueKey}' not found`);
                 }
-                if (error.response?.status === 401) {
+                if (axiosError.response?.status === 401) {
                     throw new Error('Unauthorized - check JIRA_PAT token');
                 }
-                throw new Error(`Jira API error: ${error.response?.data?.errorMessages?.join(', ') || error.message}`);
+                throw new Error(`Jira API error: ${axiosError.response?.data?.errorMessages?.join(', ') || axiosError.message}`);
             }
             throw new Error(`Failed to fetch issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -46,35 +47,40 @@ class JiraClient {
             await this.client.put(`/issue/${issueKey}`, updateData);
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                if (error.response?.status === 404) {
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error;
+                if (axiosError.response?.status === 404) {
                     throw new Error(`Issue '${issueKey}' not found`);
                 }
-                if (error.response?.status === 401) {
+                if (axiosError.response?.status === 401) {
                     throw new Error('Unauthorized - check JIRA_PAT token');
                 }
-                if (error.response?.status === 400) {
-                    throw new Error(`Invalid update data: ${error.response?.data?.errorMessages?.join(', ') || 'Bad request'}`);
+                if (axiosError.response?.status === 400) {
+                    throw new Error(`Invalid update data: ${axiosError.response?.data?.errorMessages?.join(', ') || 'Bad request'}`);
                 }
-                throw new Error(`Jira API error: ${error.response?.data?.errorMessages?.join(', ') || error.message}`);
+                throw new Error(`Jira API error: ${axiosError.response?.data?.errorMessages?.join(', ') || axiosError.message}`);
             }
             throw new Error(`Failed to update issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
     async createIssue(issueData) {
         try {
+            console.log('Creating issue with data:', JSON.stringify(issueData, null, 2));
             const response = await this.client.post('/issue', issueData);
             return response.data;
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                if (error.response?.status === 401) {
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error;
+                console.error('Jira API error response:', axiosError.response?.data);
+                if (axiosError.response?.status === 401) {
                     throw new Error('Unauthorized - check JIRA_PAT token');
                 }
-                if (error.response?.status === 400) {
-                    throw new Error(`Invalid issue data: ${error.response?.data?.errorMessages?.join(', ') || 'Bad request'}`);
+                if (axiosError.response?.status === 400) {
+                    const errorDetails = axiosError.response?.data?.errors || axiosError.response?.data?.errorMessages || ['Bad request'];
+                    throw new Error(`Invalid issue data: ${JSON.stringify(errorDetails)}`);
                 }
-                throw new Error(`Jira API error: ${error.response?.data?.errorMessages?.join(', ') || error.message}`);
+                throw new Error(`Jira API error (${axiosError.response?.status}): ${JSON.stringify(axiosError.response?.data)}`);
             }
             throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }

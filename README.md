@@ -5,6 +5,8 @@ This repository provides a complete, working example of an Optimizely Opal tool.
 - **Opal Tools:** Implements multiple tools using the `@optimizely-opal/opal-tools-sdk`:
   - Runtime calculator for experiment duration estimation
   - Markdown to PDF converter with temporary file serving
+  - JIRA integration tools for reading, updating, and creating issues
+  - Confluence integration tools for reading, updating, and creating pages
 - **Express.js Server:** A lightweight server to host the tool.
 - **TypeScript:** Type-safe code for better maintainability.
 - **Bearer Token Authentication:** Secures the tool's execution endpoint.
@@ -27,6 +29,10 @@ The project follows the structure required by Vercel for serverless Node.js func
 │   └── index.ts      # Main application logic, Express app, and tool definitions
 │   └── calculate-runtime.ts      # Runtime calculation logic
 │   └── generate-pdf.ts      # PDF generation and cleanup logic
+│   └── jira-client.ts      # JIRA API client with PAT authentication
+│   └── jira-tools.ts       # JIRA business logic (read/update/create issues)
+│   └── confluence-client.ts      # Confluence API client with PAT authentication
+│   └── confluence-tools.ts       # Confluence business logic (read/update/create pages)
 ├── .gitignore
 ├── package.json
 ├── README.md
@@ -37,6 +43,10 @@ The project follows the structure required by Vercel for serverless Node.js func
 - `api/index.ts`: The entry point for the Vercel serverless function. It contains the Express server setup, tool definitions, PDF file serving, and authentication middleware.
 - `api/calculate-runtime.ts`: Contains the runtime calculation algorithm for experiment duration estimation.
 - `api/generate-pdf.ts`: Handles markdown-to-PDF conversion using `md-to-pdf` and automatic cleanup of temporary files.
+- `api/jira-client.ts`: HTTP client for JIRA Server API with Personal Access Token authentication.
+- `api/jira-tools.ts`: Business logic for JIRA operations (read, update, create issues).
+- `api/confluence-client.ts`: HTTP client for Confluence Server API with Personal Access Token authentication.
+- `api/confluence-tools.ts`: Business logic for Confluence operations (read, update, create pages).
 - `vercel.json`: Configures Vercel to correctly handle the Express application as a single serverless function.
 
 ## Getting Started
@@ -69,6 +79,8 @@ The project follows the structure required by Vercel for serverless Node.js func
     # .env
     BEARER_TOKEN="your-secret-token-here"
     BASE_URL="https://your-project-name.vercel.app"
+    JIRA_PAT="your-jira-personal-access-token"
+    CONFLUENCE_PAT="your-confluence-personal-access-token"
     ```
 
 4.  **Run the development server:**
@@ -96,6 +108,8 @@ The project follows the structure required by Vercel for serverless Node.js func
     - Add these environment variables:
       - `BEARER_TOKEN`: The value you want to use for production authentication (keep this secret!)
       - `BASE_URL`: Your full Vercel app URL (e.g., `https://your-project-name.vercel.app`)
+      - `JIRA_PAT`: Your JIRA Personal Access Token for API authentication
+      - `CONFLUENCE_PAT`: Your Confluence Personal Access Token for API authentication
     - **Important:** Ensure the bearer token is strong and kept secret.
 
 4.  **Deploy:**
@@ -135,7 +149,7 @@ You can open this URL in your browser to see all available tools and their JSON 
 
 ### 2. Tool Execution Endpoints (Secured)
 
-Both tools are protected by bearer token authentication.
+All tools are protected by bearer token authentication.
 
 #### Runtime Calculator Tool
 
@@ -180,6 +194,108 @@ Both tools are protected by bearer token authentication.
 **Notes:** 
 - Generated PDFs are automatically cleaned up after 1 hour for now.
 - The `pdfUrl` returns a full absolute URL to ensure it works properly with Opal.
+
+#### JIRA Integration Tools
+
+**Read JIRA Issue:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/read_jira_issue`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "issueKey": "PROJ-123"
+  }
+  ```
+
+**Update JIRA Issue:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/update_jira_issue`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "issueKey": "PROJ-123",
+    "fields": {
+      "summary": "Updated issue title",
+      "description": "Updated description"
+    }
+  }
+  ```
+
+**Create JIRA Issue:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/create_jira_issue`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "project": "PROJ",
+    "issueType": "Task",
+    "summary": "New issue title",
+    "description": "Issue description",
+    "assignee": "username"
+  }
+  ```
+
+#### Confluence Integration Tools
+
+**Read Confluence Page:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/read_confluence_page`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example - by page ID):**
+  ```json
+  {
+    "pageId": "123456789"
+  }
+  ```
+- **Body (Example - by space and title):**
+  ```json
+  {
+    "spaceKey": "TEAM",
+    "title": "Page Title"
+  }
+  ```
+
+**Update Confluence Page:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/update_confluence_page`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "pageId": "123456789",
+    "content": "<p>Updated page content in Confluence storage format</p>",
+    "title": "Updated Page Title"
+  }
+  ```
+
+**Create Confluence Page:**
+- **URL:** `https://<your-project-name>.vercel.app/tools/create_confluence_page`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "spaceKey": "TEAM",
+    "title": "New Page Title",
+    "content": "<p>New page content in Confluence storage format</p>",
+    "parentPageId": "987654321"
+  }
+  ```
 
 #### Example `curl` Requests
 
