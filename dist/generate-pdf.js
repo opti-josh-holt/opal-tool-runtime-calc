@@ -9,13 +9,23 @@ const md_to_pdf_1 = require("md-to-pdf");
 const fs_1 = require("fs");
 const path_1 = __importDefault(require("path"));
 const crypto_1 = require("crypto");
+const chromium_1 = __importDefault(require("@sparticuz/chromium"));
 async function generatePdfFromMarkdown(params) {
     const { markdown, filename } = params;
     const pdfFilename = filename ? `${filename}.pdf` : `document-${(0, crypto_1.randomUUID)()}.pdf`;
     const tempDir = '/tmp';
     const outputPath = path_1.default.join(tempDir, pdfFilename);
     try {
+        console.log('Starting PDF generation...');
+        // Configure Chromium for Vercel
+        const executablePath = await chromium_1.default.executablePath();
+        console.log('Chromium executable path:', executablePath);
         const pdf = await (0, md_to_pdf_1.mdToPdf)({ content: markdown }, {
+            launch_options: {
+                executablePath: executablePath || undefined,
+                args: chromium_1.default.args,
+                headless: true,
+            },
             pdf_options: {
                 format: 'A4',
                 margin: {
@@ -27,9 +37,12 @@ async function generatePdfFromMarkdown(params) {
             }
         });
         if (!pdf?.content) {
+            console.error('PDF generation returned no content');
             throw new Error('Failed to generate PDF content');
         }
+        console.log('PDF generated successfully, writing to file...');
         await fs_1.promises.writeFile(outputPath, pdf.content);
+        console.log('PDF written to:', outputPath);
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 1);
         return {
@@ -38,6 +51,7 @@ async function generatePdfFromMarkdown(params) {
         };
     }
     catch (error) {
+        console.error('PDF generation error:', error);
         throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
