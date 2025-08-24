@@ -7,6 +7,8 @@ import express from "express";
 import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
 import { generatePdfFromMarkdown, cleanupExpiredPdfs } from "./generate-pdf";
+import { readJiraIssue, updateJiraIssue, createJiraIssue } from "./jira-tools";
+import type { ReadJiraIssueParams, UpdateJiraIssueParams, CreateJiraIssueParams } from "./jira-tools";
 
 dotenv.config();
 
@@ -128,6 +130,81 @@ tool({
     },
   ],
 })(generatePdf);
+
+tool({
+  name: "read_jira_issue",
+  description: "Reads a Jira issue by its key and returns the issue details.",
+  parameters: [
+    {
+      name: "issueKey",
+      type: ParameterType.String,
+      description: "The Jira issue key (e.g., 'PROJ-123')",
+      required: true,
+    },
+  ],
+})(readJiraIssue);
+
+tool({
+  name: "update_jira_issue",
+  description: "Updates a Jira issue with new field values.",
+  parameters: [
+    {
+      name: "issueKey",
+      type: ParameterType.String,
+      description: "The Jira issue key (e.g., 'PROJ-123')",
+      required: true,
+    },
+    {
+      name: "fields",
+      type: ParameterType.Dictionary,
+      description: "Object containing field updates (e.g., {summary: 'New title', description: 'New description'})",
+      required: true,
+    },
+  ],
+})(updateJiraIssue);
+
+tool({
+  name: "create_jira_issue",
+  description: "Creates a new Jira issue in the specified project.",
+  parameters: [
+    {
+      name: "project",
+      type: ParameterType.String,
+      description: "The project key where the issue should be created",
+      required: true,
+    },
+    {
+      name: "issueType",
+      type: ParameterType.String,
+      description: "The type of issue to create (e.g., 'Bug', 'Task', 'Story')",
+      required: true,
+    },
+    {
+      name: "summary",
+      type: ParameterType.String,
+      description: "The issue summary/title",
+      required: true,
+    },
+    {
+      name: "description",
+      type: ParameterType.String,
+      description: "Optional issue description",
+      required: false,
+    },
+    {
+      name: "assignee",
+      type: ParameterType.String,
+      description: "Optional assignee username",
+      required: false,
+    },
+    {
+      name: "additionalFields",
+      type: ParameterType.Dictionary,
+      description: "Optional additional fields to set on the issue",
+      required: false,
+    },
+  ],
+})(createJiraIssue);
 
 if (bearerToken) {
   app.use("/tools/calculateRuntime", (req, res, next) => {

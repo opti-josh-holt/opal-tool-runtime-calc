@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const calculate_runtime_1 = require("./calculate-runtime");
 const generate_pdf_1 = require("./generate-pdf");
+const jira_tools_1 = require("./jira-tools");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); // Add JSON middleware
@@ -94,6 +95,78 @@ async function generatePdf(params) {
         },
     ],
 })(generatePdf);
+(0, opal_tools_sdk_1.tool)({
+    name: "read_jira_issue",
+    description: "Reads a Jira issue by its key and returns the issue details.",
+    parameters: [
+        {
+            name: "issueKey",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Jira issue key (e.g., 'PROJ-123')",
+            required: true,
+        },
+    ],
+})(jira_tools_1.readJiraIssue);
+(0, opal_tools_sdk_1.tool)({
+    name: "update_jira_issue",
+    description: "Updates a Jira issue with new field values.",
+    parameters: [
+        {
+            name: "issueKey",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Jira issue key (e.g., 'PROJ-123')",
+            required: true,
+        },
+        {
+            name: "fields",
+            type: opal_tools_sdk_1.ParameterType.Object,
+            description: "Object containing field updates (e.g., {summary: 'New title', description: 'New description'})",
+            required: true,
+        },
+    ],
+})(jira_tools_1.updateJiraIssue);
+(0, opal_tools_sdk_1.tool)({
+    name: "create_jira_issue",
+    description: "Creates a new Jira issue in the specified project.",
+    parameters: [
+        {
+            name: "project",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The project key where the issue should be created",
+            required: true,
+        },
+        {
+            name: "issueType",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The type of issue to create (e.g., 'Bug', 'Task', 'Story')",
+            required: true,
+        },
+        {
+            name: "summary",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The issue summary/title",
+            required: true,
+        },
+        {
+            name: "description",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "Optional issue description",
+            required: false,
+        },
+        {
+            name: "assignee",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "Optional assignee username",
+            required: false,
+        },
+        {
+            name: "additionalFields",
+            type: opal_tools_sdk_1.ParameterType.Object,
+            description: "Optional additional fields to set on the issue",
+            required: false,
+        },
+    ],
+})(jira_tools_1.createJiraIssue);
 if (bearerToken) {
     app.use("/tools/calculateRuntime", (req, res, next) => {
         const authHeader = req.headers.authorization;
