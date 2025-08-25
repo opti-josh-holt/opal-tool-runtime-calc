@@ -5,10 +5,8 @@ exports.updateConfluencePage = updateConfluencePage;
 exports.createConfluencePage = createConfluencePage;
 const confluence_client_1 = require("./confluence-client");
 function convertMarkdownToConfluenceStorage(markdown) {
-    // Very simple approach - just convert to basic HTML and clean special chars
-    let result = markdown;
-    // Replace problematic characters first
-    result = result
+    // Clean up problematic characters first
+    let result = markdown
         .replace(/–/g, '-') // En-dash to regular dash
         .replace(/—/g, '-') // Em-dash to regular dash
         .replace(/"/g, '"') // Smart quotes to regular quotes
@@ -16,44 +14,81 @@ function convertMarkdownToConfluenceStorage(markdown) {
         .replace(/'/g, "'")
         .replace(/'/g, "'")
         .replace(/&/g, 'and'); // Ampersand to word
-    // Convert markdown to very basic HTML
-    result = result
+    // Process line by line for better control
+    const lines = result.split('\n');
+    const htmlLines = [];
+    let inList = false;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        // Empty line
+        if (!line) {
+            if (inList) {
+                htmlLines.push('</ul>');
+                inList = false;
+            }
+            htmlLines.push(''); // Preserve empty lines for paragraph breaks
+            continue;
+        }
         // Headers
-        .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-        .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-        .replace(/^# (.*)$/gm, '<h1>$1</h1>')
-        // Bold and italic (do this before other replacements)
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        // Lists (simple approach)
-        .replace(/^- (.*)$/gm, '<li>$1</li>')
-        // Tables - just convert to simple text for now to avoid XML issues
-        .replace(/\|.*\|/g, (match) => {
-        // Convert table rows to simple text
-        return match.replace(/\|/g, ' | ').trim();
-    })
-        .replace(/^\|.*\|$/gm, '$&<br/>')
-        // Line breaks
-        .replace(/\n\n/g, '</p><p>') // Double newlines become paragraph breaks
-        .replace(/\n/g, '<br/>'); // Single newlines become breaks
-    // Wrap in paragraphs and clean up
-    result = '<p>' + result + '</p>';
-    // Clean up formatting step by step
+        if (line.match(/^#{1,3}\s/)) {
+            if (inList) {
+                htmlLines.push('</ul>');
+                inList = false;
+            }
+            const headerText = line.replace(/^#{1,3}\s*/, '');
+            const level = (line.match(/^#+/) || [''])[0].length;
+            // Apply formatting to header text
+            const formatted = headerText
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            htmlLines.push(`<h${level}>${formatted}</h${level}>`);
+            continue;
+        }
+        // List items
+        if (line.startsWith('- ')) {
+            if (!inList) {
+                htmlLines.push('<ul>');
+                inList = true;
+            }
+            const itemText = line.substring(2);
+            const formatted = itemText
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            htmlLines.push(`<li>${formatted}</li>`);
+            continue;
+        }
+        // Tables - convert to simple text
+        if (line.includes('|')) {
+            if (inList) {
+                htmlLines.push('</ul>');
+                inList = false;
+            }
+            // Just convert table to simple text format
+            const tableText = line.replace(/\|/g, ' | ').trim();
+            htmlLines.push(`<p>${tableText}</p>`);
+            continue;
+        }
+        // Regular paragraph
+        if (inList) {
+            htmlLines.push('</ul>');
+            inList = false;
+        }
+        const formatted = line
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        htmlLines.push(`<p>${formatted}</p>`);
+    }
+    // Close any remaining list
+    if (inList) {
+        htmlLines.push('</ul>');
+    }
+    // Join and clean up
+    result = htmlLines.join('');
+    // Final cleanup
     result = result
-        .replace(/<p><\/p>/g, '') // Remove empty paragraphs
-        .replace(/<br\/><h([1-6])>/g, '</p><h$1>') // Close paragraph before header
-        .replace(/<h([1-6])>(.*?)<\/h[1-6]><br\/>/g, '<h$1>$2</h$1><p>') // Start new paragraph after header
-        .replace(/<p>(<h[1-6]>.*?<\/h[1-6]>)<\/p>/g, '$1') // Remove any remaining paragraph wrapping around headers
-        .replace(/<br\/><li>/g, '</p><ul><li>') // Start list, end paragraph
-        .replace(/<\/li><br\/>/g, '</li>') // Clean list item endings
-        .replace(/<li>(.*?)<\/li><li>/g, '<li>$1</li><li>') // Clean up list items
-        .replace(/(<\/li>)(?!<\/ul>)(?!<li>)/g, '$1</ul><p>') // End list and start paragraph
-        .replace(/<\/ul><ul>/g, '') // Merge adjacent lists
-        .replace(/<br\/><br\/>/g, '<br/>') // Reduce double breaks
-        .replace(/<p><br\/>/g, '<p>') // Clean paragraph starts
-        .replace(/<br\/><\/p>/g, '</p>') // Clean paragraph ends
-        .replace(/<p>$/, '') // Remove trailing empty paragraph start
-        .replace(/^<\/p>/, ''); // Remove leading paragraph end
+        .replace(/<\/p><p>/g, '</p><p>') // Ensure proper paragraph spacing
+        .replace(/^<\/p>/, '') // Remove leading closing paragraph
+        .replace(/<p>$/, ''); // Remove trailing opening paragraph
     return result;
 }
 async function readConfluencePage(params) {
