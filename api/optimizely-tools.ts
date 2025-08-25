@@ -27,6 +27,13 @@ import type {
   OptimizelyPage,
   OptimizelyEvent,
   OptimizelyExperimentResults,
+  ProjectOverviewParams,
+  FormattedProjectOverview,
+  ProjectOverviewSummary,
+  EnhancedExperimentSummary,
+  EnhancedAudienceSummary,
+  EnhancedEventSummary,
+  EnhancedPageSummary,
 } from "./optimizely-types";
 
 /**
@@ -44,6 +51,35 @@ function getProjectId(params: { projectId: string }): string {
     throw new Error("Project ID is required and must be a string");
   }
   return params.projectId;
+}
+
+/**
+ * Helper function to resolve entity name to ID by searching through list results
+ */
+async function resolveEntityByName<T extends { id: string | number; name: string }>(
+  entityName: string,
+  listFunction: () => Promise<T[]>,
+  entityType: string
+): Promise<string | number> {
+  const entities = await listFunction();
+  const matches = entities.filter(
+    (entity) => entity.name.toLowerCase() === entityName.toLowerCase()
+  );
+
+  if (matches.length === 0) {
+    throw new Error(
+      `No ${entityType} found with name "${entityName}". Please check the name or use the list_${entityType}s tool to see available ${entityType}s.`
+    );
+  }
+
+  if (matches.length > 1) {
+    const matchNames = matches.map((m) => `"${m.name}" (ID: ${m.id})`).join(", ");
+    throw new Error(
+      `Multiple ${entityType}s found with name "${entityName}": ${matchNames}. Please use the specific ID instead.`
+    );
+  }
+
+  return matches[0].id;
 }
 
 /**
@@ -140,19 +176,37 @@ export async function getExperiment(
   params: GetExperimentParams
 ): Promise<FormattedExperiment> {
   const projectId = getProjectId(params);
-  const { experimentId } = params;
+  const { experimentId, experimentName } = params;
 
-  if (!experimentId || typeof experimentId !== "string") {
-    throw new Error("Experiment ID is required and must be a string");
+  // Validate that either ID or name is provided, but not both
+  if (!experimentId && !experimentName) {
+    throw new Error("Either experimentId or experimentName is required");
+  }
+  if (experimentId && experimentName) {
+    throw new Error("Please provide either experimentId or experimentName, not both");
   }
 
   const client = getOptimizelyClient();
 
+  let resolvedExperimentId: string;
+
+  if (experimentName) {
+    // Resolve name to ID using the list function
+    const resolvedId = await resolveEntityByName(
+      experimentName,
+      () => client.listExperiments(projectId, { per_page: 100 }),
+      "experiment"
+    );
+    resolvedExperimentId = String(resolvedId);
+  } else {
+    resolvedExperimentId = experimentId!;
+  }
+
   try {
     console.log(
-      `DEBUG: Getting experiment ${experimentId} from project ${projectId}`
+      `DEBUG: Getting experiment ${resolvedExperimentId} from project ${projectId}`
     );
-    const experiment = await client.getExperiment(projectId, experimentId);
+    const experiment = await client.getExperiment(projectId, resolvedExperimentId);
 
     return {
       id: String(experiment.id), // Ensure experiment ID is string
@@ -185,18 +239,21 @@ export async function getExperiment(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
+        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
         throw new Error(
-          `Experiment with ID '${experimentId}' not found in project ${projectId}. This could mean: 1) The experiment ID is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ID is correct and that it exists in project ${projectId}. API Error: ${
+          `Experiment with ${identifier} not found in project ${projectId}. This could mean: 1) The experiment ${experimentName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ${experimentName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
+        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
         throw new Error(
-          `Authentication failed when getting experiment ${experimentId}. Please check your OPTIMIZELY_API_TOKEN.`
+          `Authentication failed when getting experiment with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
+        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
         throw new Error(
-          `Access forbidden to experiment ${experimentId} in project ${projectId}. Your API token may not have the required permissions.`
+          `Access forbidden to experiment with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
       }
       throw new Error(`Failed to get experiment: ${error.message}`);
@@ -284,16 +341,34 @@ export async function getAudience(
   params: GetAudienceParams
 ): Promise<FormattedAudience> {
   const projectId = getProjectId(params);
-  const { audienceId } = params;
+  const { audienceId, audienceName } = params;
 
-  if (!audienceId || typeof audienceId !== "string") {
-    throw new Error("Audience ID is required and must be a string");
+  // Validate that either ID or name is provided, but not both
+  if (!audienceId && !audienceName) {
+    throw new Error("Either audienceId or audienceName is required");
+  }
+  if (audienceId && audienceName) {
+    throw new Error("Please provide either audienceId or audienceName, not both");
   }
 
   const client = getOptimizelyClient();
 
+  let resolvedAudienceId: string;
+
+  if (audienceName) {
+    // Resolve name to ID using the list function
+    const resolvedId = await resolveEntityByName(
+      audienceName,
+      () => client.listAudiences(projectId, { per_page: 100 }),
+      "audience"
+    );
+    resolvedAudienceId = String(resolvedId);
+  } else {
+    resolvedAudienceId = audienceId!;
+  }
+
   try {
-    const audience = await client.getAudience(projectId, audienceId);
+    const audience = await client.getAudience(projectId, resolvedAudienceId);
 
     return {
       id: audience.id,
@@ -311,18 +386,21 @@ export async function getAudience(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
+        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
         throw new Error(
-          `Audience with ID '${audienceId}' not found in project ${projectId}. This could mean: 1) The audience ID is incorrect or doesn't exist, 2) The audience has been archived or deleted, 3) Your API token doesn't have access to this specific audience, or 4) The audience might be in a different project. Please verify the audience ID is correct and that it exists in project ${projectId}. API Error: ${
+          `Audience with ${identifier} not found in project ${projectId}. This could mean: 1) The audience ${audienceName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The audience has been archived or deleted, 3) Your API token doesn't have access to this specific audience, or 4) The audience might be in a different project. Please verify the audience ${audienceName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
+        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
         throw new Error(
-          `Authentication failed when getting audience ${audienceId}. Please check your OPTIMIZELY_API_TOKEN.`
+          `Authentication failed when getting audience with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
+        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
         throw new Error(
-          `Access forbidden to audience ${audienceId} in project ${projectId}. Your API token may not have the required permissions.`
+          `Access forbidden to audience with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
       }
       throw new Error(`Failed to get audience: ${error.message}`);
@@ -409,16 +487,34 @@ export async function listPages(
  */
 export async function getPage(params: GetPageParams): Promise<FormattedPage> {
   const projectId = getProjectId(params);
-  const { pageId } = params;
+  const { pageId, pageName } = params;
 
-  if (!pageId || typeof pageId !== "string") {
-    throw new Error("Page ID is required and must be a string");
+  // Validate that either ID or name is provided, but not both
+  if (!pageId && !pageName) {
+    throw new Error("Either pageId or pageName is required");
+  }
+  if (pageId && pageName) {
+    throw new Error("Please provide either pageId or pageName, not both");
   }
 
   const client = getOptimizelyClient();
 
+  let resolvedPageId: string;
+
+  if (pageName) {
+    // Resolve name to ID using the list function
+    const resolvedId = await resolveEntityByName(
+      pageName,
+      () => client.listPages(projectId, { per_page: 100 }),
+      "page"
+    );
+    resolvedPageId = String(resolvedId);
+  } else {
+    resolvedPageId = pageId!;
+  }
+
   try {
-    const page = await client.getPage(projectId, pageId);
+    const page = await client.getPage(projectId, resolvedPageId);
 
     return {
       id: page.id,
@@ -437,18 +533,21 @@ export async function getPage(params: GetPageParams): Promise<FormattedPage> {
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
+        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
         throw new Error(
-          `Page with ID '${pageId}' not found in project ${projectId}. This could mean: 1) The page ID is incorrect or doesn't exist, 2) The page has been archived or deleted, 3) Your API token doesn't have access to this specific page, or 4) The page might be in a different project. Please verify the page ID is correct and that it exists in project ${projectId}. API Error: ${
+          `Page with ${identifier} not found in project ${projectId}. This could mean: 1) The page ${pageName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The page has been archived or deleted, 3) Your API token doesn't have access to this specific page, or 4) The page might be in a different project. Please verify the page ${pageName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
+        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
         throw new Error(
-          `Authentication failed when getting page ${pageId}. Please check your OPTIMIZELY_API_TOKEN.`
+          `Authentication failed when getting page with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
+        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
         throw new Error(
-          `Access forbidden to page ${pageId} in project ${projectId}. Your API token may not have the required permissions.`
+          `Access forbidden to page with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
       }
       throw new Error(`Failed to get page: ${error.message}`);
@@ -537,16 +636,34 @@ export async function getEvent(
   params: GetEventParams
 ): Promise<FormattedEvent> {
   const projectId = getProjectId(params);
-  const { eventId } = params;
+  const { eventId, eventName } = params;
 
-  if (!eventId || typeof eventId !== "string") {
-    throw new Error("Event ID is required and must be a string");
+  // Validate that either ID or name is provided, but not both
+  if (!eventId && !eventName) {
+    throw new Error("Either eventId or eventName is required");
+  }
+  if (eventId && eventName) {
+    throw new Error("Please provide either eventId or eventName, not both");
   }
 
   const client = getOptimizelyClient();
 
+  let resolvedEventId: string;
+
+  if (eventName) {
+    // Resolve name to ID using the list function
+    const resolvedId = await resolveEntityByName(
+      eventName,
+      () => client.listEvents(projectId, { per_page: 100 }),
+      "event"
+    );
+    resolvedEventId = String(resolvedId);
+  } else {
+    resolvedEventId = eventId!;
+  }
+
   try {
-    const event = await client.getEvent(projectId, eventId);
+    const event = await client.getEvent(projectId, resolvedEventId);
 
     return {
       id: event.id,
@@ -567,18 +684,21 @@ export async function getEvent(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
+        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
         throw new Error(
-          `Event with ID '${eventId}' not found in project ${projectId}. This could mean: 1) The event ID is incorrect or doesn't exist, 2) The event has been archived or deleted, 3) Your API token doesn't have access to this specific event, or 4) The event might be in a different project. Please verify the event ID is correct and that it exists in project ${projectId}. API Error: ${
+          `Event with ${identifier} not found in project ${projectId}. This could mean: 1) The event ${eventName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The event has been archived or deleted, 3) Your API token doesn't have access to this specific event, or 4) The event might be in a different project. Please verify the event ${eventName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
+        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
         throw new Error(
-          `Authentication failed when getting event ${eventId}. Please check your OPTIMIZELY_API_TOKEN.`
+          `Authentication failed when getting event with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
+        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
         throw new Error(
-          `Access forbidden to event ${eventId} in project ${projectId}. Your API token may not have the required permissions.`
+          `Access forbidden to event with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
       }
       throw new Error(`Failed to get event: ${error.message}`);
@@ -779,6 +899,351 @@ export async function createExperiment(
     }
     throw new Error(
       `Unexpected error creating experiment: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Helper function to extract target URL from experiment
+ */
+function extractTargetUrl(
+  experiment: OptimizelyExperiment
+): string | undefined {
+  return experiment.url_targeting?.edit_url;
+}
+
+/**
+ * Helper function to determine audience targeting type
+ */
+function getAudienceTargeting(
+  audienceConditions: string
+): "everyone" | "targeted" {
+  return audienceConditions === "everyone" || audienceConditions === ""
+    ? "everyone"
+    : "targeted";
+}
+
+/**
+ * Helper function to categorize event type
+ */
+function categorizeEventType(
+  eventType: string
+): "click" | "pageview" | "custom" {
+  if (eventType === "click") return "click";
+  if (eventType === "pageview") return "pageview";
+  return "custom";
+}
+
+/**
+ * Helper function to extract click target element
+ */
+function extractTargetElement(event: OptimizelyEvent): string | undefined {
+  // If the event has config and selector, return it
+  if ((event as any).config?.selector) {
+    return (event as any).config.selector;
+  }
+  return undefined;
+}
+
+/**
+ * Helper function to determine audience targeting type from conditions
+ */
+function determineTargetingType(conditions: any): string {
+  if (typeof conditions === "string") {
+    if (conditions === "everyone" || conditions === "") return "everyone";
+    return "targeted";
+  }
+
+  if (Array.isArray(conditions)) {
+    // Look for location, browser, campaign conditions
+    const condStr = JSON.stringify(conditions);
+    if (condStr.includes("location")) return "location-based";
+    if (condStr.includes("browser")) return "browser-based";
+    if (condStr.includes("campaign")) return "campaign-based";
+    return "custom";
+  }
+
+  return "unknown";
+}
+
+/**
+ * Helper function to count audience usage in experiments
+ */
+function countAudienceUsage(
+  audienceId: string,
+  experiments: OptimizelyExperiment[]
+): number {
+  return experiments.filter(
+    (exp) =>
+      exp.audience_conditions && exp.audience_conditions.includes(audienceId)
+  ).length;
+}
+
+/**
+ * Helper function to generate project insights
+ */
+function generateInsights(
+  experiments: OptimizelyExperiment[],
+  audiences: OptimizelyAudience[],
+  events: OptimizelyEvent[]
+): string[] {
+  const insights: string[] = [];
+
+  // Experiment insights
+  const runningExps = experiments.filter((exp) => exp.status === "running");
+  const concludedExps = experiments.filter((exp) => exp.status === "concluded");
+  const notStartedExps = experiments.filter(
+    (exp) => exp.status === "not_started"
+  );
+
+  if (runningExps.length > 0) {
+    insights.push(
+      `${runningExps.length} experiment${
+        runningExps.length === 1 ? "" : "s"
+      } currently running`
+    );
+  }
+
+  if (concludedExps.length > 0) {
+    insights.push(
+      `${concludedExps.length} experiment${
+        concludedExps.length === 1 ? "" : "s"
+      } completed with results`
+    );
+  }
+
+  if (notStartedExps.length > 5) {
+    insights.push(`${notStartedExps.length} experiments ready to launch`);
+  }
+
+  // Audience insights
+  const locationAudiences = audiences.filter((aud) =>
+    JSON.stringify(aud.conditions).includes("location")
+  );
+  if (locationAudiences.length > 0) {
+    insights.push(
+      `Location-based targeting configured for ${
+        locationAudiences.length
+      } audience${locationAudiences.length === 1 ? "" : "s"}`
+    );
+  }
+
+  // Event insights
+  const clickEvents = events.filter((evt) => evt.event_type === "click");
+  if (clickEvents.length > 0) {
+    insights.push(
+      `${clickEvents.length} click event${
+        clickEvents.length === 1 ? "" : "s"
+      } configured for tracking`
+    );
+  }
+
+  // Popular domains
+  const domains = experiments
+    .map((exp) => extractTargetUrl(exp))
+    .filter(Boolean)
+    .map((url) => {
+      try {
+        return new URL(url!).hostname;
+      } catch {
+        return url;
+      }
+    });
+
+  const uniqueDomains = [...new Set(domains)];
+  if (uniqueDomains.length > 1) {
+    insights.push(`Testing across ${uniqueDomains.length} different domains`);
+  }
+
+  return insights;
+}
+
+/**
+ * Project Overview Tool
+ * Returns a comprehensive overview of all entities in a project with rich formatting
+ */
+export async function getProjectOverview(
+  params: ProjectOverviewParams
+): Promise<FormattedProjectOverview> {
+  const projectId = getProjectId(params);
+  const client = getOptimizelyClient();
+
+  try {
+    console.log(
+      `DEBUG: Getting comprehensive overview for project ${projectId}`
+    );
+
+    // Fetch all entity types in parallel for better performance
+    const [experiments, audiences, events, pages] = await Promise.all([
+      client.listExperiments(projectId, { per_page: 100 }),
+      client.listAudiences(projectId, { per_page: 100 }),
+      client.listEvents(projectId, { per_page: 100 }),
+      client.listPages(projectId, { per_page: 100 }).catch(() => []), // Pages might not exist for all projects
+    ]);
+
+    console.log(
+      `DEBUG: Retrieved ${experiments.length} experiments, ${audiences.length} audiences, ${events.length} events, ${pages.length} pages`
+    );
+
+    // Process experiments with enhanced metadata
+    const enhancedExperiments: EnhancedExperimentSummary[] = experiments.map(
+      (exp) => ({
+        id: String(exp.id),
+        name: exp.name,
+        status: exp.status,
+        type: exp.type,
+        traffic_allocation: exp.traffic_allocation,
+        variations_count: exp.variations?.length || 0,
+        metrics_count: exp.metrics?.length || 0,
+        last_modified: formatDate(exp.last_modified),
+        target_url: extractTargetUrl(exp),
+        audience_targeting: getAudienceTargeting(exp.audience_conditions),
+        has_results: exp.status === "concluded" || exp.status === "running",
+      })
+    );
+
+    // Group experiments by status
+    const experimentsByStatus = {
+      running: enhancedExperiments.filter((exp) => exp.status === "running"),
+      concluded: enhancedExperiments.filter(
+        (exp) => exp.status === "concluded"
+      ),
+      not_started: enhancedExperiments.filter(
+        (exp) => exp.status === "not_started"
+      ),
+      archived: enhancedExperiments.filter((exp) => exp.status === "archived"),
+      paused: enhancedExperiments.filter((exp) => exp.status === "paused"),
+    };
+
+    // Calculate experiment types
+    const experimentTypes: { [key: string]: number } = {};
+    experiments.forEach((exp) => {
+      experimentTypes[exp.type] = (experimentTypes[exp.type] || 0) + 1;
+    });
+
+    // Extract popular target domains
+    const popularTargets = [
+      ...new Set(
+        enhancedExperiments
+          .map((exp) => exp.target_url)
+          .filter((url): url is string => Boolean(url))
+          .map((url) => {
+            try {
+              return new URL(url).hostname;
+            } catch {
+              return url;
+            }
+          })
+      ),
+    ].slice(0, 5); // Top 5 domains
+
+    // Process audiences with enhanced metadata
+    const enhancedAudiences: EnhancedAudienceSummary[] = audiences.map(
+      (aud) => ({
+        id: String(aud.id),
+        name: aud.name,
+        experiment_usage: countAudienceUsage(String(aud.id), experiments),
+        targeting_type: determineTargetingType(aud.conditions),
+        archived: aud.archived,
+        last_modified: formatDate(aud.last_modified),
+      })
+    );
+
+    // Group audiences by archived status
+    const activeAudiences = enhancedAudiences.filter((aud) => !aud.archived);
+    const archivedAudiences = enhancedAudiences.filter((aud) => aud.archived);
+
+    // Calculate targeting breakdown
+    const targetingBreakdown: { [key: string]: number } = {};
+    enhancedAudiences.forEach((aud) => {
+      targetingBreakdown[aud.targeting_type] =
+        (targetingBreakdown[aud.targeting_type] || 0) + 1;
+    });
+
+    // Process events with enhanced metadata
+    const enhancedEvents: EnhancedEventSummary[] = events.map((evt) => ({
+      id: String(evt.id),
+      name: evt.name,
+      event_type: categorizeEventType(evt.event_type),
+      category: evt.category,
+      archived: evt.archived,
+      target_element: extractTargetElement(evt),
+    }));
+
+    // Group events by type
+    const eventsByType = {
+      click: enhancedEvents.filter((evt) => evt.event_type === "click"),
+      pageview: enhancedEvents.filter((evt) => evt.event_type === "pageview"),
+      custom: enhancedEvents.filter((evt) => evt.event_type === "custom"),
+    };
+
+    // Process pages with enhanced metadata
+    const enhancedPages: EnhancedPageSummary[] = pages.map((page) => ({
+      id: String(page.id),
+      name: page.name,
+      edit_url: page.edit_url,
+      activation_type: (page as any).activation_type || "unknown",
+      category: page.category,
+      archived: page.archived,
+    }));
+
+    // Calculate page activation breakdown
+    const pageActivationBreakdown: { [key: string]: number } = {};
+    enhancedPages.forEach((page) => {
+      pageActivationBreakdown[page.activation_type] =
+        (pageActivationBreakdown[page.activation_type] || 0) + 1;
+    });
+
+    // Generate insights
+    const insights = generateInsights(experiments, audiences, events);
+
+    // Build comprehensive summary
+    const summary: ProjectOverviewSummary = {
+      project_id: projectId,
+      total_experiments: experiments.length,
+      total_audiences: audiences.length,
+      total_events: events.length,
+      total_pages: pages.length,
+      experiments_by_status: {
+        running: experimentsByStatus.running.length,
+        concluded: experimentsByStatus.concluded.length,
+        not_started: experimentsByStatus.not_started.length,
+        archived: experimentsByStatus.archived.length,
+        paused: experimentsByStatus.paused.length,
+      },
+      insights,
+    };
+
+    return {
+      summary,
+      experiments: {
+        by_status: experimentsByStatus,
+        popular_targets: popularTargets,
+        experiment_types: experimentTypes,
+      },
+      audiences: {
+        active: activeAudiences,
+        archived: archivedAudiences,
+        targeting_breakdown: targetingBreakdown,
+      },
+      events: {
+        by_type: eventsByType,
+        active_count: enhancedEvents.filter((evt) => !evt.archived).length,
+        archived_count: enhancedEvents.filter((evt) => evt.archived).length,
+      },
+      pages: {
+        all: enhancedPages,
+        by_activation: pageActivationBreakdown,
+      },
+    };
+  } catch (error) {
+    if (error instanceof OptimizelyClientError) {
+      throw new Error(`Failed to get project overview: ${error.message}`);
+    }
+    throw new Error(
+      `Unexpected error getting project overview: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );

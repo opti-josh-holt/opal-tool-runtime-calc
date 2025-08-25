@@ -365,7 +365,7 @@ tool({
 tool({
   name: "get_experiment",
   description:
-    "Gets detailed information about a specific experiment including variations, audiences, and metrics.",
+    "Gets detailed information about a specific experiment including variations, audiences, and metrics. You can specify either the experiment ID or the experiment name.",
   parameters: [
     {
       name: "projectId",
@@ -376,8 +376,14 @@ tool({
     {
       name: "experimentId",
       type: ParameterType.String,
-      description: "The experiment ID to retrieve",
-      required: true,
+      description: "The experiment ID to retrieve (optional if experimentName is provided)",
+      required: false,
+    },
+    {
+      name: "experimentName",
+      type: ParameterType.String,
+      description: "The experiment name to retrieve (optional if experimentId is provided)",
+      required: false,
     },
   ],
 })(getExperiment);
@@ -437,7 +443,7 @@ tool({
 tool({
   name: "get_audience",
   description:
-    "Gets detailed information about a specific audience including conditions and segmentation settings.",
+    "Gets detailed information about a specific audience including conditions and segmentation settings. You can specify either the audience ID or the audience name.",
   parameters: [
     {
       name: "projectId",
@@ -448,8 +454,14 @@ tool({
     {
       name: "audienceId",
       type: ParameterType.String,
-      description: "The audience ID to retrieve",
-      required: true,
+      description: "The audience ID to retrieve (optional if audienceName is provided)",
+      required: false,
+    },
+    {
+      name: "audienceName",
+      type: ParameterType.String,
+      description: "The audience name to retrieve (optional if audienceId is provided)",
+      required: false,
     },
   ],
 })(getAudience);
@@ -489,7 +501,7 @@ tool({
 tool({
   name: "get_page",
   description:
-    "Gets detailed information about a specific page including conditions and targeting settings.",
+    "Gets detailed information about a specific page including conditions and targeting settings. You can specify either the page ID or the page name.",
   parameters: [
     {
       name: "projectId",
@@ -500,8 +512,14 @@ tool({
     {
       name: "pageId",
       type: ParameterType.String,
-      description: "The page ID to retrieve",
-      required: true,
+      description: "The page ID to retrieve (optional if pageName is provided)",
+      required: false,
+    },
+    {
+      name: "pageName",
+      type: ParameterType.String,
+      description: "The page name to retrieve (optional if pageId is provided)",
+      required: false,
     },
   ],
 })(getPage);
@@ -541,7 +559,7 @@ tool({
 tool({
   name: "get_event",
   description:
-    "Gets detailed information about a specific event including event type and tracking configuration.",
+    "Gets detailed information about a specific event including event type and tracking configuration. You can specify either the event ID or the event name.",
   parameters: [
     {
       name: "projectId",
@@ -552,8 +570,14 @@ tool({
     {
       name: "eventId",
       type: ParameterType.String,
-      description: "The event ID to retrieve",
-      required: true,
+      description: "The event ID to retrieve (optional if eventName is provided)",
+      required: false,
+    },
+    {
+      name: "eventName",
+      type: ParameterType.String,
+      description: "The event name to retrieve (optional if eventId is provided)",
+      required: false,
     },
   ],
 })(getEvent);

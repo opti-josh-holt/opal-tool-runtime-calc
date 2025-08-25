@@ -154,7 +154,10 @@ class OptimizelyClient {
         return this.makeRequest("GET", url);
     }
     async getAudience(projectId, audienceId) {
-        return this.makeRequest("GET", `/projects/${projectId}/audiences/${audienceId}`);
+        const url = `/audiences/${audienceId}`;
+        console.log(`DEBUG: Getting audience with URL: ${url}`);
+        console.log(`DEBUG: Audience ID: ${audienceId}, Type: ${typeof audienceId}, Length: ${audienceId.length}`);
+        return this.makeRequest("GET", url);
     }
     // Page methods
     async listPages(projectId, options = {}) {
@@ -171,7 +174,10 @@ class OptimizelyClient {
         return this.makeRequest("GET", url);
     }
     async getPage(projectId, pageId) {
-        return this.makeRequest("GET", `/projects/${projectId}/pages/${pageId}`);
+        const url = `/pages/${pageId}`;
+        console.log(`DEBUG: Getting page with URL: ${url}`);
+        console.log(`DEBUG: Page ID: ${pageId}, Type: ${typeof pageId}, Length: ${pageId.length}`);
+        return this.makeRequest("GET", url);
     }
     // Event methods
     async listEvents(projectId, options = {}) {
@@ -188,7 +194,10 @@ class OptimizelyClient {
         return this.makeRequest("GET", url);
     }
     async getEvent(projectId, eventId) {
-        return this.makeRequest("GET", `/projects/${projectId}/events/${eventId}`);
+        const url = `/events/${eventId}`;
+        console.log(`DEBUG: Getting event with URL: ${url}`);
+        console.log(`DEBUG: Event ID: ${eventId}, Type: ${typeof eventId}, Length: ${eventId.length}`);
+        return this.makeRequest("GET", url);
     }
     // Utility methods
     async healthCheck() {

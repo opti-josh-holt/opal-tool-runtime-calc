@@ -170,22 +170,26 @@ export interface ListEventsParams {
 
 export interface GetExperimentParams {
   projectId: string;
-  experimentId: string;
+  experimentId?: string;
+  experimentName?: string;
 }
 
 export interface GetAudienceParams {
   projectId: string;
-  audienceId: string;
+  audienceId?: string;
+  audienceName?: string;
 }
 
 export interface GetPageParams {
   projectId: string;
-  pageId: string;
+  pageId?: string;
+  pageName?: string;
 }
 
 export interface GetEventParams {
   projectId: string;
-  eventId: string;
+  eventId?: string;
+  eventName?: string;
 }
 
 export interface GetExperimentResultsParams {
@@ -366,6 +370,104 @@ export interface FormattedExperimentResults {
     confidence_level?: number;
     total_conversions: number;
     overall_conversion_rate: number;
+  };
+}
+
+// Project Overview types
+export interface ProjectOverviewParams {
+  projectId: string;
+}
+
+export interface ProjectOverviewSummary {
+  project_id: string;
+  project_name?: string;
+  platform?: string;
+  total_experiments: number;
+  total_audiences: number;
+  total_events: number;
+  total_pages: number;
+  last_modified?: string;
+  experiments_by_status: {
+    running: number;
+    concluded: number;
+    not_started: number;
+    archived: number;
+    paused?: number;
+  };
+  insights: string[];
+}
+
+export interface EnhancedExperimentSummary {
+  id: string;
+  name: string;
+  status: string;
+  type: string;
+  traffic_allocation: number;
+  variations_count: number;
+  metrics_count: number;
+  last_modified: string;
+  target_url?: string;
+  audience_targeting: "everyone" | "targeted";
+  has_results: boolean;
+}
+
+export interface EnhancedAudienceSummary {
+  id: string;
+  name: string;
+  experiment_usage: number;
+  targeting_type: string;
+  archived: boolean;
+  last_modified: string;
+}
+
+export interface EnhancedEventSummary {
+  id: string;
+  name: string;
+  event_type: "click" | "pageview" | "custom";
+  category: string;
+  archived: boolean;
+  target_element?: string;
+}
+
+export interface EnhancedPageSummary {
+  id: string;
+  name: string;
+  edit_url: string;
+  activation_type: string;
+  category: string;
+  archived: boolean;
+}
+
+export interface FormattedProjectOverview {
+  summary: ProjectOverviewSummary;
+  experiments: {
+    by_status: {
+      running: EnhancedExperimentSummary[];
+      concluded: EnhancedExperimentSummary[];
+      not_started: EnhancedExperimentSummary[];
+      archived: EnhancedExperimentSummary[];
+      paused?: EnhancedExperimentSummary[];
+    };
+    popular_targets: string[];
+    experiment_types: { [key: string]: number };
+  };
+  audiences: {
+    active: EnhancedAudienceSummary[];
+    archived: EnhancedAudienceSummary[];
+    targeting_breakdown: { [key: string]: number };
+  };
+  events: {
+    by_type: {
+      click: EnhancedEventSummary[];
+      pageview: EnhancedEventSummary[];
+      custom: EnhancedEventSummary[];
+    };
+    active_count: number;
+    archived_count: number;
+  };
+  pages: {
+    all: EnhancedPageSummary[];
+    by_activation: { [key: string]: number };
   };
 }
 
