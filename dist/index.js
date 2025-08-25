@@ -250,30 +250,6 @@ async function generatePdf(params) {
 })(confluence_tools_1.createConfluencePage);
 // Optimizely Web Experimentation Tools
 (0, opal_tools_sdk_1.tool)({
-    name: "get_project_info",
-    description: "Gets basic project information to validate access and check project type (Web vs Feature Experimentation).",
-    parameters: [
-        {
-            name: "projectId",
-            type: opal_tools_sdk_1.ParameterType.String,
-            description: "The Optimizely project ID",
-            required: true,
-        },
-    ],
-})(optimizely_tools_1.getProjectInfo);
-(0, opal_tools_sdk_1.tool)({
-    name: "test_campaigns",
-    description: "Tests if campaigns endpoint works as an alternative debugging tool for Web Experimentation projects.",
-    parameters: [
-        {
-            name: "projectId",
-            type: opal_tools_sdk_1.ParameterType.String,
-            description: "The Optimizely project ID",
-            required: true,
-        },
-    ],
-})(optimizely_tools_1.testCampaigns);
-(0, opal_tools_sdk_1.tool)({
     name: "list_experiments",
     description: "Lists all experiments in an Optimizely Web Experimentation project with readable formatting.",
     parameters: [

@@ -83,17 +83,15 @@ class OptimizelyClient {
     async makeRequest(method, url, data) {
         await this.rateLimiter.waitIfNeeded();
         try {
-            console.log(`DEBUG: Making ${method} request to: ${url}`);
             const response = await this.client.request({
                 method,
                 url,
                 data,
             });
-            console.log(`DEBUG: Request successful, response length:`, JSON.stringify(response.data).length);
             return response.data;
         }
         catch (error) {
-            console.error(`DEBUG: Optimizely API ${method} ${url} failed:`, error);
+            console.error(`Optimizely API ${method} ${url} failed:`, error);
             throw error;
         }
     }
@@ -114,7 +112,6 @@ class OptimizelyClient {
             params.append("include_classic", options.include_classic.toString());
         }
         const url = `/experiments?${params.toString()}`;
-        console.log(`DEBUG: Making request to: ${url}`);
         return this.makeRequest("GET", url);
     }
     async getExperiment(projectId, experimentId) {
@@ -130,19 +127,6 @@ class OptimizelyClient {
     }
     async getExperimentResults(projectId, experimentId) {
         return this.makeRequest("GET", `/experiments/${experimentId}/results`);
-    }
-    // Campaign methods (Web Experimentation alternative)
-    async listCampaigns(projectId, options = {}) {
-        const params = new URLSearchParams();
-        if (options.page)
-            params.append("page", options.page.toString());
-        if (options.per_page)
-            params.append("per_page", options.per_page.toString());
-        if (options.include_classic !== undefined) {
-            params.append("include_classic", options.include_classic.toString());
-        }
-        const url = `/projects/${projectId}/campaigns${params.toString() ? "?" + params.toString() : ""}`;
-        return this.makeRequest("GET", url);
     }
     // Audience methods
     async listAudiences(projectId, options = {}) {

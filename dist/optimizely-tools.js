@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProjectInfo = getProjectInfo;
-exports.testCampaigns = testCampaigns;
 exports.listExperiments = listExperiments;
 exports.getExperiment = getExperiment;
 exports.listAudiences = listAudiences;
@@ -29,78 +27,6 @@ function getProjectId(params) {
     return params.projectId;
 }
 /**
- * Get Project Info Tool
- * Returns basic project information to validate access and project type
- */
-async function getProjectInfo(params) {
-    const projectId = getProjectId(params);
-    const client = (0, optimizely_client_1.getOptimizelyClient)();
-    try {
-        const project = await client.getProject(projectId);
-        return {
-            id: project.id,
-            name: project.name,
-            platform: project.platform,
-            status: project.status,
-            created: formatDate(project.created),
-            last_modified: formatDate(project.last_modified),
-            account_id: project.account_id,
-            debug_info: {
-                api_base_url: "https://api.optimizely.com/v2",
-                project_endpoint: `/projects/${projectId}`,
-                experiments_endpoint: `/experiments?project_id=${projectId}`,
-            },
-        };
-    }
-    catch (error) {
-        if (error instanceof optimizely_client_1.OptimizelyClientError) {
-            if (error.status === 404) {
-                throw new Error(`Project ${projectId} not found. Please verify the project ID is correct and your API token has access to it.`);
-            }
-            else if (error.status === 401) {
-                throw new Error(`Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`);
-            }
-            else if (error.status === 403) {
-                throw new Error(`Access forbidden to project ${projectId}. Your API token may not have the required permissions.`);
-            }
-            throw new Error(`Failed to get project info: ${error.message}`);
-        }
-        throw new Error(`Unexpected error getting project info: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-}
-/**
- * Test Campaigns Tool
- * Tests if campaigns endpoint works as an alternative to experiments
- */
-async function testCampaigns(params) {
-    const projectId = getProjectId(params);
-    const client = (0, optimizely_client_1.getOptimizelyClient)();
-    try {
-        const campaigns = await client.listCampaigns(projectId, {
-            per_page: 10,
-            include_classic: true,
-        });
-        return {
-            success: true,
-            message: `Found ${campaigns.length} campaigns in project ${projectId}`,
-            campaigns_count: campaigns.length,
-            campaigns: campaigns.slice(0, 3), // Return first 3 for preview
-        };
-    }
-    catch (error) {
-        if (error instanceof optimizely_client_1.OptimizelyClientError) {
-            return {
-                success: false,
-                message: `Campaigns endpoint also failed: ${error.message} (Status: ${error.status})`,
-            };
-        }
-        return {
-            success: false,
-            message: `Unexpected error testing campaigns: ${error instanceof Error ? error.message : "Unknown error"}`,
-        };
-    }
-}
-/**
  * List Experiments Tool
  * Returns a formatted list of experiments in a project
  */
@@ -108,13 +34,11 @@ async function listExperiments(params) {
     const projectId = getProjectId(params);
     const client = (0, optimizely_client_1.getOptimizelyClient)();
     try {
-        console.log(`DEBUG: Attempting to list experiments for project ${projectId}`);
         const experiments = await client.listExperiments(projectId, {
             page: params.page,
             per_page: params.per_page || 50,
             include_classic: true,
         });
-        console.log(`DEBUG: Successfully retrieved ${experiments.length} experiments`);
         return {
             project_id: projectId,
             total_count: experiments.length,
@@ -134,7 +58,6 @@ async function listExperiments(params) {
         };
     }
     catch (error) {
-        console.error(`DEBUG: Error in listExperiments:`, error);
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
             // Provide more specific error messages based on status code
             if (error.status === 404) {
