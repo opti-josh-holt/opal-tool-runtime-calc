@@ -171,32 +171,44 @@ function convertMarkdownToConfluenceStorage(markdown) {
 async function readConfluencePage(params) {
     const { pageId, spaceKey, title } = params;
     if (!pageId && !(spaceKey && title)) {
-        throw new Error('Either pageId or both spaceKey and title are required');
+        throw new Error('Either pageId or both spaceKey and title are required to read a Confluence page');
     }
-    let page;
-    if (pageId) {
-        if (typeof pageId !== 'string') {
-            throw new Error('Page ID must be a string');
+    try {
+        let page;
+        if (pageId) {
+            page = await confluence_client_1.confluenceClient.getPageById(pageId);
         }
-        page = await confluence_client_1.confluenceClient.getPageById(pageId);
-    }
-    else {
-        if (typeof spaceKey !== 'string' || typeof title !== 'string') {
-            throw new Error('Space key and title must be strings');
+        else {
+            page = await confluence_client_1.confluenceClient.getPageByTitle(spaceKey.toUpperCase(), title);
         }
-        page = await confluence_client_1.confluenceClient.getPageByTitle(spaceKey.toUpperCase(), title);
+        return {
+            id: page.id,
+            title: page.title,
+            content: page.body.storage.value,
+            spaceKey: page.space.key,
+            spaceName: page.space.name,
+            version: page.version.number,
+            lastModified: page.version.when,
+            lastModifiedBy: page.version.by.displayName,
+            url: `https://confluence.sso.episerver.net${page._links.webui}`,
+        };
     }
-    return {
-        id: page.id,
-        title: page.title,
-        content: page.body.storage.value,
-        spaceKey: page.space.key,
-        spaceName: page.space.name,
-        version: page.version.number,
-        lastModified: page.version.when,
-        lastModifiedBy: page.version.by.displayName,
-        url: `https://confluence.sso.episerver.net${page._links.webui}`,
-    };
+    catch (error) {
+        if (error instanceof confluence_client_1.ConfluenceClientError) {
+            const identifier = pageId ? `ID "${pageId}"` : `title "${title}" in space "${spaceKey}"`;
+            if (error.status === 404) {
+                throw new Error(`Confluence page with ${identifier} not found. This could mean: 1) The page ${pageId ? 'ID' : 'title or space key'} is incorrect, 2) The page has been deleted or archived, 3) You don't have permission to view this page or space, or 4) The space doesn't exist. Please verify the ${pageId ? 'page ID' : 'page title and space key'} are correct and that you have access to the page. Error details: ${error.message}`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed when accessing Confluence page with ${identifier}. Please check your CONFLUENCE_PAT environment variable contains a valid Personal Access Token with read permissions. Error details: ${error.message}`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access denied to Confluence page with ${identifier}. Your account may not have permission to view this page or space. Please contact your Confluence administrator or verify you have read access to the space. Error details: ${error.message}`);
+            }
+            throw new Error(`Failed to read Confluence page with ${identifier}: ${error.message}`);
+        }
+        throw new Error(`Unexpected error reading Confluence page: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
 }
 async function updateConfluencePage(params) {
     const { pageId, title, content } = params;
@@ -206,26 +218,49 @@ async function updateConfluencePage(params) {
     if (!content || typeof content !== 'string') {
         throw new Error('Content is required and must be a string');
     }
-    const existingPage = await confluence_client_1.confluenceClient.getPageById(pageId);
-    const updateData = {
-        version: {
-            number: existingPage.version.number + 1,
-        },
-        title: title || existingPage.title,
-        type: existingPage.type,
-        body: {
-            storage: {
-                value: convertMarkdownToConfluenceStorage(content),
-                representation: 'storage',
+    try {
+        const existingPage = await confluence_client_1.confluenceClient.getPageById(pageId);
+        const updateData = {
+            version: {
+                number: existingPage.version.number + 1,
             },
-        },
-    };
-    const updatedPage = await confluence_client_1.confluenceClient.updatePage(pageId, updateData);
-    return {
-        success: true,
-        message: `Page "${updatedPage.title}" updated successfully`,
-        version: updatedPage.version.number,
-    };
+            title: title || existingPage.title,
+            type: existingPage.type,
+            body: {
+                storage: {
+                    value: convertMarkdownToConfluenceStorage(content),
+                    representation: 'storage',
+                },
+            },
+        };
+        const updatedPage = await confluence_client_1.confluenceClient.updatePage(pageId, updateData);
+        return {
+            success: true,
+            message: `Page "${updatedPage.title}" updated successfully`,
+            version: updatedPage.version.number,
+        };
+    }
+    catch (error) {
+        if (error instanceof confluence_client_1.ConfluenceClientError) {
+            if (error.status === 404) {
+                throw new Error(`Confluence page with ID "${pageId}" not found for update. This could mean: 1) The page ID is incorrect, 2) The page has been deleted, or 3) You don't have permission to view this page. Please verify the page ID is correct and that the page exists. Error details: ${error.message}`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed when updating Confluence page "${pageId}". Please check your CONFLUENCE_PAT environment variable contains a valid Personal Access Token with edit permissions. Error details: ${error.message}`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access denied when updating Confluence page "${pageId}". Your account may not have permission to edit pages in this space. Please contact your Confluence administrator or verify you have edit permissions for this space. Error details: ${error.message}`);
+            }
+            else if (error.status === 409) {
+                throw new Error(`Version conflict when updating Confluence page "${pageId}". The page was modified by another user while you were editing it. Please refresh the page, get the latest version, and try your update again. Error details: ${error.message}`);
+            }
+            else if (error.status === 400) {
+                throw new Error(`Invalid update data for Confluence page "${pageId}". The content format or other field values may be incorrect. Please check that the content is valid and all required fields are provided. Error details: ${error.message}`);
+            }
+            throw new Error(`Failed to update Confluence page "${pageId}": ${error.message}`);
+        }
+        throw new Error(`Unexpected error updating Confluence page "${pageId}": ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
 }
 async function createConfluencePage(params) {
     const { spaceKey, title, content, parentPageId } = params;
@@ -238,31 +273,48 @@ async function createConfluencePage(params) {
     if (!content || typeof content !== 'string') {
         throw new Error('Content is required and must be a string');
     }
-    const pageData = {
-        type: 'page',
-        title,
-        space: {
-            key: spaceKey.toUpperCase(),
-        },
-        body: {
-            storage: {
-                value: convertMarkdownToConfluenceStorage(content),
-                representation: 'storage',
+    try {
+        const pageData = {
+            type: 'page',
+            title,
+            space: {
+                key: spaceKey.toUpperCase(),
             },
-        },
-        ...(parentPageId && {
-            ancestors: [
-                {
-                    id: parentPageId,
+            body: {
+                storage: {
+                    value: convertMarkdownToConfluenceStorage(content),
+                    representation: 'storage',
                 },
-            ],
-        }),
-    };
-    const result = await confluence_client_1.confluenceClient.createPage(pageData);
-    return {
-        id: result.id,
-        title: result.title,
-        url: `https://confluence.sso.episerver.net${result._links.webui}`,
-        spaceKey: result.space.key,
-    };
+            },
+            ...(parentPageId && {
+                ancestors: [
+                    {
+                        id: parentPageId,
+                    },
+                ],
+            }),
+        };
+        const result = await confluence_client_1.confluenceClient.createPage(pageData);
+        return {
+            id: result.id,
+            title: result.title,
+            url: `https://confluence.sso.episerver.net${result._links.webui}`,
+            spaceKey: result.space.key,
+        };
+    }
+    catch (error) {
+        if (error instanceof confluence_client_1.ConfluenceClientError) {
+            if (error.status === 400) {
+                throw new Error(`Invalid data when creating Confluence page "${title}" in space "${spaceKey}". This could mean: 1) The space key "${spaceKey}" doesn't exist or you don't have access to it, 2) The page title already exists in this space, 3) The parent page ID is invalid (if provided), or 4) Required fields are missing. Please verify the space key exists, the page title is unique in the space, and all required fields are provided. Error details: ${error.message}`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed when creating Confluence page. Please check your CONFLUENCE_PAT environment variable contains a valid Personal Access Token with create permissions. Error details: ${error.message}`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access denied when creating page in space "${spaceKey}". Your account may not have permission to create pages in this space. Please contact your Confluence administrator or verify you have create permissions for this space. Error details: ${error.message}`);
+            }
+            throw new Error(`Failed to create Confluence page "${title}" in space "${spaceKey}": ${error.message}`);
+        }
+        throw new Error(`Unexpected error creating Confluence page "${title}" in space "${spaceKey}": ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
 }

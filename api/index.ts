@@ -5,7 +5,7 @@ import {
 } from "@optimizely-opal/opal-tools-sdk";
 import express from "express";
 import dotenv from "dotenv";
-import { estimateRunTimeDays } from "./calculate-runtime";
+import { estimateRunTimeDays, CalculationError } from "./calculate-runtime";
 import { generatePdfFromMarkdown, cleanupExpiredPdfs } from "./generate-pdf";
 import { readJiraIssue, updateJiraIssue, createJiraIssue } from "./jira-tools";
 import type {
@@ -102,14 +102,56 @@ async function calculateRuntime(
   params: CalculateRuntimeParams
 ): Promise<{ days: number | null }> {
   const { BCR, MDE, sigLevel, numVariations, dailyVisitors } = params;
-  const days = estimateRunTimeDays(
-    BCR,
-    MDE,
-    sigLevel,
-    numVariations,
-    dailyVisitors
-  );
-  return { days };
+  
+  try {
+    const days = estimateRunTimeDays(
+      BCR,
+      MDE,
+      sigLevel,
+      numVariations,
+      dailyVisitors
+    );
+    return { days };
+  } catch (error) {
+    if (error instanceof CalculationError) {
+      // Provide detailed error context for runtime calculations
+      if (error.code === 'INVALID_BCR') {
+        throw new Error(
+          `Invalid Baseline Conversion Rate: ${error.message} The BCR represents your current conversion rate as a decimal (e.g., 0.05 for 5%). Please check your analytics data and provide the correct conversion rate.`
+        );
+      } else if (error.code === 'INVALID_MDE') {
+        throw new Error(
+          `Invalid Minimum Detectable Effect: ${error.message} The MDE represents the relative improvement you want to detect (e.g., 0.10 for a 10% improvement). Consider what meaningful business impact you want to measure.`
+        );
+      } else if (error.code === 'INVALID_SIGNIFICANCE_LEVEL') {
+        throw new Error(
+          `Invalid Statistical Significance Level: ${error.message} This determines how confident you want to be in your results. Common values are 90, 95, or 99. Higher values require longer tests.`
+        );
+      } else if (error.code === 'INVALID_NUM_VARIATIONS') {
+        throw new Error(
+          `Invalid Number of Variations: ${error.message} For a simple A/B test, use 2 (control + one variation). For A/B/C testing, use 3, and so on.`
+        );
+      } else if (error.code === 'INVALID_DAILY_VISITORS') {
+        throw new Error(
+          `Invalid Daily Visitors: ${error.message} This should be the number of unique visitors per day who will see your experiment. Check your website analytics for accurate traffic numbers.`
+        );
+      } else if (error.code === 'MDE_TOO_LARGE') {
+        throw new Error(
+          `Minimum Detectable Effect is too large: ${error.message} Your MDE would result in a negative conversion rate. Try reducing the MDE to a more realistic value, or verify your BCR is correct.`
+        );
+      } else if (error.code === 'DURATION_TOO_LONG') {
+        throw new Error(
+          `Experiment duration too long: ${error.message} To reduce the duration, you can: 1) Increase the MDE (detect larger effects), 2) Lower the significance level (accept more uncertainty), or 3) Get more daily traffic to the test.`
+        );
+      }
+      throw new Error(`Runtime calculation error: ${error.message}`);
+    }
+    throw new Error(
+      `Unexpected error calculating experiment runtime: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
 }
 
 async function generatePdf(
