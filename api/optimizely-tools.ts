@@ -87,7 +87,7 @@ export async function listExperiments(
       project_id: projectId,
       total_count: experiments.length,
       experiments: experiments.map((exp) => ({
-        id: exp.id,
+        id: String(exp.id), // Ensure ID is handled as string to prevent precision loss
         name: exp.name,
         status: exp.status,
         type: exp.type,
@@ -149,10 +149,13 @@ export async function getExperiment(
   const client = getOptimizelyClient();
 
   try {
+    console.log(
+      `DEBUG: Getting experiment ${experimentId} from project ${projectId}`
+    );
     const experiment = await client.getExperiment(projectId, experimentId);
 
     return {
-      id: experiment.id,
+      id: String(experiment.id), // Ensure experiment ID is string
       name: experiment.name,
       description: experiment.description,
       status: experiment.status,
@@ -180,6 +183,22 @@ export async function getExperiment(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 404) {
+        throw new Error(
+          `Experiment with ID '${experimentId}' not found in project ${projectId}. This could mean: 1) The experiment ID is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ID is correct and that it exists in project ${projectId}. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed when getting experiment ${experimentId}. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to experiment ${experimentId} in project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to get experiment: ${error.message}`);
     }
     throw new Error(
@@ -502,7 +521,7 @@ export async function getExperimentResults(
     );
 
     return {
-      experiment_id: parseInt(experimentId),
+      experiment_id: experimentId, // Keep as string to prevent precision loss
       experiment_name: experiment.name,
       project_id: parseInt(projectId),
       status: results.status,
@@ -514,7 +533,7 @@ export async function getExperimentResults(
       confidence: results.confidence,
       variations:
         results.results?.map((variation) => ({
-          id: variation.variation_id,
+          id: variation.variation_id, // Already a string type
           name: variation.variation_name,
           visitors: variation.visitors,
           conversions: variation.conversions,

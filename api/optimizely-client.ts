@@ -178,10 +178,15 @@ export class OptimizelyClient {
     projectId: string,
     experimentId: string
   ): Promise<OptimizelyExperiment> {
-    return this.makeRequest<OptimizelyExperiment>(
-      "GET",
-      `/experiments/${experimentId}`
+    const url = `/experiments/${experimentId}`;
+    console.log(`DEBUG: Getting experiment with URL: ${url}`);
+    console.log(
+      `DEBUG: Experiment ID: ${experimentId}, Type: ${typeof experimentId}, Length: ${
+        experimentId.length
+      }`
     );
+
+    return this.makeRequest<OptimizelyExperiment>("GET", url);
   }
 
   async createExperiment(

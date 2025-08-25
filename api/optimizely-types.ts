@@ -17,7 +17,7 @@ export interface OptimizelyProject {
 }
 
 export interface OptimizelyExperiment {
-  id: number;
+  id: string; // Changed to string to handle large experiment IDs without precision loss
   project_id: number;
   campaign_id: number;
   created: string;
@@ -35,19 +35,19 @@ export interface OptimizelyExperiment {
   variations: OptimizelyVariation[];
   audience_conditions: string;
   metrics?: OptimizelyMetric[];
-  page_ids?: number[];
+  page_ids?: string[]; // Changed to string array to handle large page IDs
   url_targeting?: {
     activation_type: string;
     conditions: string;
     edit_url: string;
     key: string;
-    page_id: number;
+    page_id: string; // Changed to string to handle large page IDs
   };
   changes?: any[];
 }
 
 export interface OptimizelyVariation {
-  variation_id: number;
+  variation_id: string; // Changed to string to handle large variation IDs
   name: string;
   weight: number;
   archived: boolean;
@@ -57,8 +57,8 @@ export interface OptimizelyVariation {
 }
 
 export interface OptimizelyAction {
-  id: number;
-  page_id: number;
+  id: string; // Changed to string to handle large action IDs
+  page_id: string; // Changed to string to handle large page IDs
   type: string;
   selector?: string;
   value?: string;
@@ -130,7 +130,7 @@ export interface OptimizelyExperimentResults {
 }
 
 export interface OptimizelyVariationResults {
-  variation_id: number;
+  variation_id: string; // Changed to string to handle large variation IDs
   variation_name: string;
   visitors: number;
   conversions: number;
@@ -210,7 +210,7 @@ export interface FormattedExperimentList {
   project_id: string;
   total_count: number;
   experiments: {
-    id: number;
+    id: string; // Changed to string to prevent precision loss
     name: string;
     status: string;
     type: string;
@@ -225,7 +225,7 @@ export interface FormattedExperimentList {
 }
 
 export interface FormattedExperiment {
-  id: number;
+  id: string; // Changed to string to prevent precision loss
   name: string;
   description?: string;
   status: string;
@@ -242,10 +242,10 @@ export interface FormattedExperiment {
     conditions: string;
     edit_url: string;
     key: string;
-    page_id: number;
+    page_id: string; // Changed to string to handle large page IDs
   };
   variations: {
-    id: number;
+    id: string; // Changed to string to handle large variation IDs
     name: string;
     weight: number;
     archived: boolean;
@@ -254,7 +254,7 @@ export interface FormattedExperiment {
   }[];
   audience_conditions: string;
   metrics_count: number;
-  page_ids: number[];
+  page_ids: string[]; // Changed to string array to handle large page IDs
 }
 
 export interface FormattedAudienceList {
@@ -342,7 +342,7 @@ export interface FormattedEvent {
 }
 
 export interface FormattedExperimentResults {
-  experiment_id: number;
+  experiment_id: string; // Changed to string to handle large experiment IDs
   experiment_name: string;
   project_id: number;
   status: string;
@@ -351,7 +351,7 @@ export interface FormattedExperimentResults {
   total_visitors: number;
   confidence?: number;
   variations: {
-    id: number;
+    id: string; // Changed to string to handle large variation IDs
     name: string;
     visitors: number;
     conversions: number;
