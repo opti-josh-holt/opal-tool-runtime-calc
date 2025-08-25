@@ -34,16 +34,27 @@ async function listExperiments(params) {
     const projectId = getProjectId(params);
     const client = (0, optimizely_client_1.getOptimizelyClient)();
     try {
+        // First verify the project exists and is accessible
+        console.log(`DEBUG: Attempting to list experiments for project ${projectId}`);
+        try {
+            const project = await client.getProject(projectId);
+            console.log(`DEBUG: Project validation successful - ${project.name} (platform: ${project.platform}, status: ${project.status})`);
+        }
+        catch (projectError) {
+            console.log(`DEBUG: Project validation failed:`, projectError);
+            // Continue anyway - the project endpoint might have different permissions
+        }
+        console.log(`DEBUG: Making request to: /experiments?project_id=${projectId}&per_page=${params.per_page || 50} (no include_classic parameter)`);
         const experiments = await client.listExperiments(projectId, {
             page: params.page,
             per_page: params.per_page || 50,
-            include_classic: true,
+            // Removed include_classic parameter entirely
         });
         return {
             project_id: projectId,
             total_count: experiments.length,
             experiments: experiments.map((exp) => ({
-                id: exp.id,
+                id: String(exp.id), // Ensure ID is handled as string to prevent precision loss
                 name: exp.name,
                 status: exp.status,
                 type: exp.type,
@@ -60,7 +71,10 @@ async function listExperiments(params) {
     catch (error) {
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
             // Provide more specific error messages based on status code
-            if (error.status === 404) {
+            if (error.status === 400) {
+                throw new Error(`Bad request when listing experiments for project ${projectId}. This could indicate: 1) The project ID format is incorrect (should be a numeric string), 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${error.message} ${error.details ? `(${JSON.stringify(error.details)})` : ""}`);
+            }
+            else if (error.status === 404) {
                 throw new Error(`No experiments found for project ${projectId}. This could mean: 1) The project doesn't have any experiments created yet, 2) The experiments might be organized as campaigns instead, or 3) The experiments endpoint is not available for this project type. The project exists and is accessible (platform: web, active status), but the experiments endpoint returned 404. You may need to create experiments first in the Optimizely Web interface, or this project might use a different API structure.`);
             }
             else if (error.status === 401) {
@@ -86,9 +100,10 @@ async function getExperiment(params) {
     }
     const client = (0, optimizely_client_1.getOptimizelyClient)();
     try {
+        console.log(`DEBUG: Getting experiment ${experimentId} from project ${projectId}`);
         const experiment = await client.getExperiment(projectId, experimentId);
         return {
-            id: experiment.id,
+            id: String(experiment.id), // Ensure experiment ID is string
             name: experiment.name,
             description: experiment.description,
             status: experiment.status,
@@ -116,6 +131,16 @@ async function getExperiment(params) {
     }
     catch (error) {
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
+            // Provide more specific error messages based on status code
+            if (error.status === 404) {
+                throw new Error(`Experiment with ID '${experimentId}' not found in project ${projectId}. This could mean: 1) The experiment ID is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ID is correct and that it exists in project ${projectId}. API Error: ${error.message} ${error.details ? `(${JSON.stringify(error.details)})` : ""}`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed when getting experiment ${experimentId}. Please check your OPTIMIZELY_API_TOKEN.`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access forbidden to experiment ${experimentId} in project ${projectId}. Your API token may not have the required permissions.`);
+            }
             throw new Error(`Failed to get experiment: ${error.message}`);
         }
         throw new Error(`Unexpected error getting experiment: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -132,7 +157,7 @@ async function listAudiences(params) {
         const audiences = await client.listAudiences(projectId, {
             page: params.page,
             per_page: params.per_page || 50,
-            include_classic: true,
+            // Removed include_classic parameter to match API format
         });
         // Filter by archived status if specified
         const filteredAudiences = params.archived !== undefined
@@ -153,6 +178,19 @@ async function listAudiences(params) {
     }
     catch (error) {
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
+            // Provide more specific error messages based on status code
+            if (error.status === 400) {
+                throw new Error(`Bad request when listing audiences for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${error.message} ${error.details ? `(${JSON.stringify(error.details)})` : ""}`);
+            }
+            else if (error.status === 404) {
+                throw new Error(`No audiences found for project ${projectId}. The project exists but the audiences endpoint returned 404. You may need to create audiences first in the Optimizely Web interface.`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access forbidden to project ${projectId}. Your API token may not have the required permissions.`);
+            }
             throw new Error(`Failed to list audiences: ${error.message}`);
         }
         throw new Error(`Unexpected error listing audiences: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -202,7 +240,7 @@ async function listPages(params) {
         const pages = await client.listPages(projectId, {
             page: params.page,
             per_page: params.per_page || 50,
-            include_classic: true,
+            // Removed include_classic parameter to match API format
         });
         // Filter by archived status if specified
         const filteredPages = params.archived !== undefined
@@ -224,6 +262,19 @@ async function listPages(params) {
     }
     catch (error) {
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
+            // Provide more specific error messages based on status code
+            if (error.status === 400) {
+                throw new Error(`Bad request when listing pages for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${error.message} ${error.details ? `(${JSON.stringify(error.details)})` : ""}`);
+            }
+            else if (error.status === 404) {
+                throw new Error(`No pages found for project ${projectId}. The project exists but the pages endpoint returned 404. You may need to create pages first in the Optimizely Web interface.`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access forbidden to project ${projectId}. Your API token may not have the required permissions.`);
+            }
             throw new Error(`Failed to list pages: ${error.message}`);
         }
         throw new Error(`Unexpected error listing pages: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -274,7 +325,7 @@ async function listEvents(params) {
         const events = await client.listEvents(projectId, {
             page: params.page,
             per_page: params.per_page || 50,
-            include_classic: true,
+            // Removed include_classic parameter to match API format
         });
         // Filter by archived status if specified
         const filteredEvents = params.archived !== undefined
@@ -296,6 +347,19 @@ async function listEvents(params) {
     }
     catch (error) {
         if (error instanceof optimizely_client_1.OptimizelyClientError) {
+            // Provide more specific error messages based on status code
+            if (error.status === 400) {
+                throw new Error(`Bad request when listing events for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${error.message} ${error.details ? `(${JSON.stringify(error.details)})` : ""}`);
+            }
+            else if (error.status === 404) {
+                throw new Error(`No events found for project ${projectId}. The project exists but the events endpoint returned 404. You may need to create events first in the Optimizely Web interface.`);
+            }
+            else if (error.status === 401) {
+                throw new Error(`Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`);
+            }
+            else if (error.status === 403) {
+                throw new Error(`Access forbidden to project ${projectId}. Your API token may not have the required permissions.`);
+            }
             throw new Error(`Failed to list events: ${error.message}`);
         }
         throw new Error(`Unexpected error listing events: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -360,7 +424,7 @@ async function getExperimentResults(params) {
         // Find winning variation (highest conversion rate with statistical significance)
         const winningVariation = results.results?.find((v) => v.statistical_significance && v.statistical_significance >= 95);
         return {
-            experiment_id: parseInt(experimentId),
+            experiment_id: experimentId, // Keep as string to prevent precision loss
             experiment_name: experiment.name,
             project_id: parseInt(projectId),
             status: results.status,
@@ -371,7 +435,7 @@ async function getExperimentResults(params) {
             total_visitors: results.visitors,
             confidence: results.confidence,
             variations: results.results?.map((variation) => ({
-                id: variation.variation_id,
+                id: variation.variation_id, // Already a string type
                 name: variation.variation_name,
                 visitors: variation.visitors,
                 conversions: variation.conversions,

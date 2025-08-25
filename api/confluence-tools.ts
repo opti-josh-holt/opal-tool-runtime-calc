@@ -1,5 +1,80 @@
 import { confluenceClient, type ConfluencePage } from './confluence-client';
 
+function processMarkdownTable(lines: string[], startIndex: number): { html: string; lastIndex: number } {
+  let currentIndex = startIndex;
+  
+  // Parse header row
+  const headerLine = lines[currentIndex].trim();
+  const headers = headerLine.split('|').map(h => h.trim()).filter(h => h);
+  currentIndex++;
+  
+  // Skip separator row
+  currentIndex++;
+  
+  // Collect data rows
+  const dataRows: string[][] = [];
+  while (currentIndex < lines.length) {
+    const line = lines[currentIndex].trim();
+    if (!line || !line.includes('|')) break;
+    
+    const cells = line.split('|').map(c => c.trim()).filter(c => c !== '');
+    if (cells.length > 0) {
+      dataRows.push(cells);
+    }
+    currentIndex++;
+  }
+  
+  // Generate HTML table
+  let tableHtml = '<table><tbody>';
+  
+  // Header row
+  if (headers.length > 0) {
+    tableHtml += '<tr>';
+    headers.forEach(header => {
+      const cleaned = header
+        .replace(/–/g, '-')
+        .replace(/—/g, '-')
+        .replace(/"/g, '"')
+        .replace(/"/g, '"')
+        .replace(/'/g, "'")
+        .replace(/'/g, "'")
+        .replace(/&/g, 'and');
+      const formatted = cleaned
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      tableHtml += `<th>${formatted}</th>`;
+    });
+    tableHtml += '</tr>';
+  }
+  
+  // Data rows
+  dataRows.forEach(row => {
+    tableHtml += '<tr>';
+    row.forEach(cell => {
+      const cleaned = cell
+        .replace(/–/g, '-')
+        .replace(/—/g, '-')
+        .replace(/"/g, '"')
+        .replace(/"/g, '"')
+        .replace(/'/g, "'")
+        .replace(/'/g, "'")
+        .replace(/&/g, 'and');
+      const formatted = cleaned
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      tableHtml += `<td>${formatted}</td>`;
+    });
+    tableHtml += '</tr>';
+  });
+  
+  tableHtml += '</tbody></table>';
+  
+  return {
+    html: tableHtml,
+    lastIndex: currentIndex - 1 // Return to last processed line
+  };
+}
+
 function convertMarkdownToConfluenceStorage(markdown: string): string {
   // Clean up problematic characters first
   let result = markdown
@@ -64,16 +139,27 @@ function convertMarkdownToConfluenceStorage(markdown: string): string {
       continue;
     }
     
-    // Tables - convert to simple text
-    if (line.includes('|')) {
+    // Tables - detect and convert to proper HTML tables
+    if (line.includes('|') && !line.match(/^\s*\|?\s*-+\s*\|/)) {
       if (inList) {
         htmlLines.push('</ul>');
         inList = false;
       }
       
-      // Just convert table to simple text format
-      const tableText = line.replace(/\|/g, ' | ').trim();
-      htmlLines.push(`<p>${tableText}</p>`);
+      // Look ahead to see if this is part of a table
+      const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+      const isTableHeader = nextLine && nextLine.match(/^\|?[\s]*[-:]+[\s]*(\|[\s]*[-:]+[\s]*)*\|?$/);
+      
+      if (isTableHeader) {
+        // Process the entire table
+        const tableResult = processMarkdownTable(lines, i);
+        htmlLines.push(tableResult.html);
+        i = tableResult.lastIndex; // Skip processed lines
+      } else {
+        // Single table-like line, treat as text
+        const tableText = line.replace(/\|/g, ' | ').trim();
+        htmlLines.push(`<p>${tableText}</p>`);
+      }
       continue;
     }
     

@@ -223,7 +223,7 @@ export async function listAudiences(
     const audiences = await client.listAudiences(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
-      include_classic: true,
+      // Removed include_classic parameter to match API format
     });
 
     // Filter by archived status if specified
@@ -246,6 +246,26 @@ export async function listAudiences(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 400) {
+        throw new Error(
+          `Bad request when listing audiences for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 404) {
+        throw new Error(
+          `No audiences found for project ${projectId}. The project exists but the audiences endpoint returned 404. You may need to create audiences first in the Optimizely Web interface.`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to list audiences: ${error.message}`);
     }
     throw new Error(
@@ -313,7 +333,7 @@ export async function listPages(
     const pages = await client.listPages(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
-      include_classic: true,
+      // Removed include_classic parameter to match API format
     });
 
     // Filter by archived status if specified
@@ -337,6 +357,26 @@ export async function listPages(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 400) {
+        throw new Error(
+          `Bad request when listing pages for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 404) {
+        throw new Error(
+          `No pages found for project ${projectId}. The project exists but the pages endpoint returned 404. You may need to create pages first in the Optimizely Web interface.`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to list pages: ${error.message}`);
     }
     throw new Error(
@@ -403,7 +443,7 @@ export async function listEvents(
     const events = await client.listEvents(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
-      include_classic: true,
+      // Removed include_classic parameter to match API format
     });
 
     // Filter by archived status if specified
@@ -427,6 +467,26 @@ export async function listEvents(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 400) {
+        throw new Error(
+          `Bad request when listing events for project ${projectId}. This could indicate: 1) The project ID format is incorrect, 2) The project ID doesn't exist, 3) Your API token doesn't have access to this project, or 4) Required parameters are missing or malformed. Please verify the project ID is correct and that your API token has the necessary permissions. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 404) {
+        throw new Error(
+          `No events found for project ${projectId}. The project exists but the events endpoint returned 404. You may need to create events first in the Optimizely Web interface.`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to list events: ${error.message}`);
     }
     throw new Error(

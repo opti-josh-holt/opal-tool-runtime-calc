@@ -225,16 +225,15 @@ export class OptimizelyClient {
     } = {}
   ): Promise<OptimizelyAudience[]> {
     const params = new URLSearchParams();
+    // Add project_id as a filter parameter (like experiments)
+    params.append("project_id", projectId);
     if (options.page) params.append("page", options.page.toString());
     if (options.per_page)
       params.append("per_page", options.per_page.toString());
-    if (options.include_classic !== undefined) {
-      params.append("include_classic", options.include_classic.toString());
-    }
+    // Remove include_classic parameter as it's likely causing issues
 
-    const url = `/projects/${projectId}/audiences${
-      params.toString() ? "?" + params.toString() : ""
-    }`;
+    const url = `/audiences?${params.toString()}`;
+    console.log(`DEBUG: Making audiences request to: ${url}`);
     return this.makeRequest<OptimizelyAudience[]>("GET", url);
   }
 
@@ -258,16 +257,15 @@ export class OptimizelyClient {
     } = {}
   ): Promise<OptimizelyPage[]> {
     const params = new URLSearchParams();
+    // Add project_id as a filter parameter (like experiments)
+    params.append("project_id", projectId);
     if (options.page) params.append("page", options.page.toString());
     if (options.per_page)
       params.append("per_page", options.per_page.toString());
-    if (options.include_classic !== undefined) {
-      params.append("include_classic", options.include_classic.toString());
-    }
+    // Remove include_classic parameter as it's likely causing issues
 
-    const url = `/projects/${projectId}/pages${
-      params.toString() ? "?" + params.toString() : ""
-    }`;
+    const url = `/pages?${params.toString()}`;
+    console.log(`DEBUG: Making pages request to: ${url}`);
     return this.makeRequest<OptimizelyPage[]>("GET", url);
   }
 
@@ -288,16 +286,15 @@ export class OptimizelyClient {
     } = {}
   ): Promise<OptimizelyEvent[]> {
     const params = new URLSearchParams();
+    // Add project_id as a filter parameter (like experiments)
+    params.append("project_id", projectId);
     if (options.page) params.append("page", options.page.toString());
     if (options.per_page)
       params.append("per_page", options.per_page.toString());
-    if (options.include_classic !== undefined) {
-      params.append("include_classic", options.include_classic.toString());
-    }
+    // Remove include_classic parameter as it's likely causing issues
 
-    const url = `/projects/${projectId}/events${
-      params.toString() ? "?" + params.toString() : ""
-    }`;
+    const url = `/events?${params.toString()}`;
+    console.log(`DEBUG: Making events request to: ${url}`);
     return this.makeRequest<OptimizelyEvent[]>("GET", url);
   }
 

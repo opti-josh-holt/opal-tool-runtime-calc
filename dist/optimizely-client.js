@@ -108,14 +108,25 @@ class OptimizelyClient {
             params.append("page", options.page.toString());
         if (options.per_page)
             params.append("per_page", options.per_page.toString());
+        // Only add include_classic if it's explicitly set (not undefined)
         if (options.include_classic !== undefined) {
             params.append("include_classic", options.include_classic.toString());
+            console.log(`DEBUG: Adding include_classic=${options.include_classic}`);
+        }
+        else {
+            console.log(`DEBUG: Not adding include_classic parameter (undefined)`);
         }
         const url = `/experiments?${params.toString()}`;
+        console.log(`DEBUG: Making request to: ${url}`);
+        console.log(`DEBUG: Project ID: ${projectId}, Type: ${typeof projectId}`);
+        console.log(`DEBUG: Full URL params: ${params.toString()}`);
         return this.makeRequest("GET", url);
     }
     async getExperiment(projectId, experimentId) {
-        return this.makeRequest("GET", `/experiments/${experimentId}`);
+        const url = `/experiments/${experimentId}`;
+        console.log(`DEBUG: Getting experiment with URL: ${url}`);
+        console.log(`DEBUG: Experiment ID: ${experimentId}, Type: ${typeof experimentId}, Length: ${experimentId.length}`);
+        return this.makeRequest("GET", url);
     }
     async createExperiment(projectId, experimentData) {
         // Add project_id to the experiment data
@@ -131,14 +142,15 @@ class OptimizelyClient {
     // Audience methods
     async listAudiences(projectId, options = {}) {
         const params = new URLSearchParams();
+        // Add project_id as a filter parameter (like experiments)
+        params.append("project_id", projectId);
         if (options.page)
             params.append("page", options.page.toString());
         if (options.per_page)
             params.append("per_page", options.per_page.toString());
-        if (options.include_classic !== undefined) {
-            params.append("include_classic", options.include_classic.toString());
-        }
-        const url = `/projects/${projectId}/audiences${params.toString() ? "?" + params.toString() : ""}`;
+        // Remove include_classic parameter as it's likely causing issues
+        const url = `/audiences?${params.toString()}`;
+        console.log(`DEBUG: Making audiences request to: ${url}`);
         return this.makeRequest("GET", url);
     }
     async getAudience(projectId, audienceId) {
@@ -147,14 +159,15 @@ class OptimizelyClient {
     // Page methods
     async listPages(projectId, options = {}) {
         const params = new URLSearchParams();
+        // Add project_id as a filter parameter (like experiments)
+        params.append("project_id", projectId);
         if (options.page)
             params.append("page", options.page.toString());
         if (options.per_page)
             params.append("per_page", options.per_page.toString());
-        if (options.include_classic !== undefined) {
-            params.append("include_classic", options.include_classic.toString());
-        }
-        const url = `/projects/${projectId}/pages${params.toString() ? "?" + params.toString() : ""}`;
+        // Remove include_classic parameter as it's likely causing issues
+        const url = `/pages?${params.toString()}`;
+        console.log(`DEBUG: Making pages request to: ${url}`);
         return this.makeRequest("GET", url);
     }
     async getPage(projectId, pageId) {
@@ -163,14 +176,15 @@ class OptimizelyClient {
     // Event methods
     async listEvents(projectId, options = {}) {
         const params = new URLSearchParams();
+        // Add project_id as a filter parameter (like experiments)
+        params.append("project_id", projectId);
         if (options.page)
             params.append("page", options.page.toString());
         if (options.per_page)
             params.append("per_page", options.per_page.toString());
-        if (options.include_classic !== undefined) {
-            params.append("include_classic", options.include_classic.toString());
-        }
-        const url = `/projects/${projectId}/events${params.toString() ? "?" + params.toString() : ""}`;
+        // Remove include_classic parameter as it's likely causing issues
+        const url = `/events?${params.toString()}`;
+        console.log(`DEBUG: Making events request to: ${url}`);
         return this.makeRequest("GET", url);
     }
     async getEvent(projectId, eventId) {
