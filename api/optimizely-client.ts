@@ -157,8 +157,13 @@ export class OptimizelyClient {
     if (options.page) params.append("page", options.page.toString());
     if (options.per_page)
       params.append("per_page", options.per_page.toString());
+
+    // Only add include_classic if it's explicitly set (not undefined)
     if (options.include_classic !== undefined) {
       params.append("include_classic", options.include_classic.toString());
+      console.log(`DEBUG: Adding include_classic=${options.include_classic}`);
+    } else {
+      console.log(`DEBUG: Not adding include_classic parameter (undefined)`);
     }
 
     const url = `/experiments?${params.toString()}`;

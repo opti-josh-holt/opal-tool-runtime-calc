@@ -74,12 +74,13 @@ export async function listExperiments(
     console.log(
       `DEBUG: Making request to: /experiments?project_id=${projectId}&per_page=${
         params.per_page || 50
-      }&include_classic=true`
+      } (no include_classic parameter)`
     );
+
     const experiments = await client.listExperiments(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
-      include_classic: true,
+      // Removed include_classic parameter entirely
     });
 
     return {
