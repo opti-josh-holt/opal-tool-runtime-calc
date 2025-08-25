@@ -10,6 +10,8 @@ const calculate_runtime_1 = require("./calculate-runtime");
 const generate_pdf_1 = require("./generate-pdf");
 const jira_tools_1 = require("./jira-tools");
 const confluence_tools_1 = require("./confluence-tools");
+// Optimizely Web Experimentation Tools
+const optimizely_tools_1 = require("./optimizely-tools");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); // Add JSON middleware
@@ -246,6 +248,253 @@ async function generatePdf(params) {
         },
     ],
 })(confluence_tools_1.createConfluencePage);
+// Optimizely Web Experimentation Tools
+(0, opal_tools_sdk_1.tool)({
+    name: "list_experiments",
+    description: "Lists all experiments in an Optimizely Web Experimentation project with readable formatting.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Page number for pagination (optional)",
+            required: false,
+        },
+        {
+            name: "per_page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Number of results per page (default: 50, max: 100)",
+            required: false,
+        },
+    ],
+})(optimizely_tools_1.listExperiments);
+(0, opal_tools_sdk_1.tool)({
+    name: "get_experiment",
+    description: "Gets detailed information about a specific experiment including variations, audiences, and metrics.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "experimentId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The experiment ID to retrieve",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getExperiment);
+(0, opal_tools_sdk_1.tool)({
+    name: "get_experiment_results",
+    description: "Gets experiment results with statistical analysis including conversion rates, confidence levels, and winning variations.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "experimentId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The experiment ID to get results for",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getExperimentResults);
+(0, opal_tools_sdk_1.tool)({
+    name: "list_audiences",
+    description: "Lists all audiences in an Optimizely Web Experimentation project with readable formatting.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "archived",
+            type: opal_tools_sdk_1.ParameterType.Boolean,
+            description: "Filter by archived status (optional)",
+            required: false,
+        },
+        {
+            name: "page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Page number for pagination (optional)",
+            required: false,
+        },
+        {
+            name: "per_page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Number of results per page (default: 50, max: 100)",
+            required: false,
+        },
+    ],
+})(optimizely_tools_1.listAudiences);
+(0, opal_tools_sdk_1.tool)({
+    name: "get_audience",
+    description: "Gets detailed information about a specific audience including conditions and segmentation settings.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "audienceId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The audience ID to retrieve",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getAudience);
+(0, opal_tools_sdk_1.tool)({
+    name: "list_pages",
+    description: "Lists all pages in an Optimizely Web Experimentation project with readable formatting.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "archived",
+            type: opal_tools_sdk_1.ParameterType.Boolean,
+            description: "Filter by archived status (optional)",
+            required: false,
+        },
+        {
+            name: "page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Page number for pagination (optional)",
+            required: false,
+        },
+        {
+            name: "per_page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Number of results per page (default: 50, max: 100)",
+            required: false,
+        },
+    ],
+})(optimizely_tools_1.listPages);
+(0, opal_tools_sdk_1.tool)({
+    name: "get_page",
+    description: "Gets detailed information about a specific page including conditions and targeting settings.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "pageId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The page ID to retrieve",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getPage);
+(0, opal_tools_sdk_1.tool)({
+    name: "list_events",
+    description: "Lists all events in an Optimizely Web Experimentation project with readable formatting.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "archived",
+            type: opal_tools_sdk_1.ParameterType.Boolean,
+            description: "Filter by archived status (optional)",
+            required: false,
+        },
+        {
+            name: "page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Page number for pagination (optional)",
+            required: false,
+        },
+        {
+            name: "per_page",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Number of results per page (default: 50, max: 100)",
+            required: false,
+        },
+    ],
+})(optimizely_tools_1.listEvents);
+(0, opal_tools_sdk_1.tool)({
+    name: "get_event",
+    description: "Gets detailed information about a specific event including event type and tracking configuration.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "eventId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The event ID to retrieve",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getEvent);
+(0, opal_tools_sdk_1.tool)({
+    name: "create_experiment",
+    description: "Creates a new experiment in an Optimizely Web Experimentation project (demo purposes).",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+        {
+            name: "name",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The experiment name",
+            required: true,
+        },
+        {
+            name: "description",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "Optional experiment description",
+            required: false,
+        },
+        {
+            name: "percentage_included",
+            type: opal_tools_sdk_1.ParameterType.Number,
+            description: "Percentage of traffic to include (1-100, default: 100)",
+            required: false,
+        },
+        {
+            name: "audience_ids",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "JSON string array of audience IDs to target (optional, e.g. '[123, 456]')",
+            required: false,
+        },
+        {
+            name: "variations",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "JSON string array of variation objects with name and weight properties (optional, e.g. '[{\"name\":\"Variation A\",\"weight\":50}]')",
+            required: false,
+        },
+    ],
+})(optimizely_tools_1.createExperiment);
 if (bearerToken) {
     app.use("/tools/calculateRuntime", (req, res, next) => {
         const authHeader = req.headers.authorization;

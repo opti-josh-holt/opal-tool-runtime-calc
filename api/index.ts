@@ -8,9 +8,47 @@ import dotenv from "dotenv";
 import { estimateRunTimeDays } from "./calculate-runtime";
 import { generatePdfFromMarkdown, cleanupExpiredPdfs } from "./generate-pdf";
 import { readJiraIssue, updateJiraIssue, createJiraIssue } from "./jira-tools";
-import type { ReadJiraIssueParams, UpdateJiraIssueParams, CreateJiraIssueParams } from "./jira-tools";
-import { readConfluencePage, updateConfluencePage, createConfluencePage } from "./confluence-tools";
-import type { ReadConfluencePageParams, UpdateConfluencePageParams, CreateConfluencePageParams } from "./confluence-tools";
+import type {
+  ReadJiraIssueParams,
+  UpdateJiraIssueParams,
+  CreateJiraIssueParams,
+} from "./jira-tools";
+import {
+  readConfluencePage,
+  updateConfluencePage,
+  createConfluencePage,
+} from "./confluence-tools";
+import type {
+  ReadConfluencePageParams,
+  UpdateConfluencePageParams,
+  CreateConfluencePageParams,
+} from "./confluence-tools";
+
+// Optimizely Web Experimentation Tools
+import {
+  listExperiments,
+  getExperiment,
+  listAudiences,
+  getAudience,
+  listPages,
+  getPage,
+  listEvents,
+  getEvent,
+  getExperimentResults,
+  createExperiment,
+} from "./optimizely-tools";
+import type {
+  ListExperimentsParams,
+  GetExperimentParams,
+  ListAudiencesParams,
+  GetAudienceParams,
+  ListPagesParams,
+  GetPageParams,
+  ListEventsParams,
+  GetEventParams,
+  GetExperimentResultsParams,
+  CreateExperimentParams,
+} from "./optimizely-types";
 
 dotenv.config();
 
@@ -18,14 +56,17 @@ const app = express();
 app.use(express.json()); // Add JSON middleware
 
 // Serve PDFs from /tmp directory
-app.use('/pdfs', express.static('/tmp', {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.pdf')) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline');
-    }
-  }
-}));
+app.use(
+  "/pdfs",
+  express.static("/tmp", {
+    setHeaders: (res, path) => {
+      if (path.endsWith(".pdf")) {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+      }
+    },
+  })
+);
 
 const toolsService = new ToolsService(app);
 const bearerToken = process.env.BEARER_TOKEN;
@@ -116,7 +157,8 @@ tool({
 
 tool({
   name: "generate_pdf_from_markdown",
-  description: "Converts markdown text to a PDF document and returns a download URL.",
+  description:
+    "Converts markdown text to a PDF document and returns a download URL.",
   parameters: [
     {
       name: "markdown",
@@ -127,7 +169,8 @@ tool({
     {
       name: "filename",
       type: ParameterType.String,
-      description: "Optional custom filename for the PDF (without .pdf extension)",
+      description:
+        "Optional custom filename for the PDF (without .pdf extension)",
       required: false,
     },
   ],
@@ -159,7 +202,8 @@ tool({
     {
       name: "fields",
       type: ParameterType.Dictionary,
-      description: "Object containing field updates (e.g., {summary: 'New title', description: 'New description'})",
+      description:
+        "Object containing field updates (e.g., {summary: 'New title', description: 'New description'})",
       required: true,
     },
   ],
@@ -252,7 +296,8 @@ tool({
     {
       name: "content",
       type: ParameterType.String,
-      description: "The new page content in Markdown format (automatically converted to Confluence storage format)",
+      description:
+        "The new page content in Markdown format (automatically converted to Confluence storage format)",
       required: true,
     },
   ],
@@ -277,7 +322,8 @@ tool({
     {
       name: "content",
       type: ParameterType.String,
-      description: "The page content in Markdown format (automatically converted to Confluence storage format)",
+      description:
+        "The page content in Markdown format (automatically converted to Confluence storage format)",
       required: true,
     },
     {
@@ -288,6 +334,275 @@ tool({
     },
   ],
 })(createConfluencePage);
+
+// Optimizely Web Experimentation Tools
+tool({
+  name: "list_experiments",
+  description:
+    "Lists all experiments in an Optimizely Web Experimentation project with readable formatting.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "page",
+      type: ParameterType.Number,
+      description: "Page number for pagination (optional)",
+      required: false,
+    },
+    {
+      name: "per_page",
+      type: ParameterType.Number,
+      description: "Number of results per page (default: 50, max: 100)",
+      required: false,
+    },
+  ],
+})(listExperiments);
+
+tool({
+  name: "get_experiment",
+  description:
+    "Gets detailed information about a specific experiment including variations, audiences, and metrics.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "experimentId",
+      type: ParameterType.String,
+      description: "The experiment ID to retrieve",
+      required: true,
+    },
+  ],
+})(getExperiment);
+
+tool({
+  name: "get_experiment_results",
+  description:
+    "Gets experiment results with statistical analysis including conversion rates, confidence levels, and winning variations.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "experimentId",
+      type: ParameterType.String,
+      description: "The experiment ID to get results for",
+      required: true,
+    },
+  ],
+})(getExperimentResults);
+
+tool({
+  name: "list_audiences",
+  description:
+    "Lists all audiences in an Optimizely Web Experimentation project with readable formatting.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "archived",
+      type: ParameterType.Boolean,
+      description: "Filter by archived status (optional)",
+      required: false,
+    },
+    {
+      name: "page",
+      type: ParameterType.Number,
+      description: "Page number for pagination (optional)",
+      required: false,
+    },
+    {
+      name: "per_page",
+      type: ParameterType.Number,
+      description: "Number of results per page (default: 50, max: 100)",
+      required: false,
+    },
+  ],
+})(listAudiences);
+
+tool({
+  name: "get_audience",
+  description:
+    "Gets detailed information about a specific audience including conditions and segmentation settings.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "audienceId",
+      type: ParameterType.String,
+      description: "The audience ID to retrieve",
+      required: true,
+    },
+  ],
+})(getAudience);
+
+tool({
+  name: "list_pages",
+  description:
+    "Lists all pages in an Optimizely Web Experimentation project with readable formatting.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "archived",
+      type: ParameterType.Boolean,
+      description: "Filter by archived status (optional)",
+      required: false,
+    },
+    {
+      name: "page",
+      type: ParameterType.Number,
+      description: "Page number for pagination (optional)",
+      required: false,
+    },
+    {
+      name: "per_page",
+      type: ParameterType.Number,
+      description: "Number of results per page (default: 50, max: 100)",
+      required: false,
+    },
+  ],
+})(listPages);
+
+tool({
+  name: "get_page",
+  description:
+    "Gets detailed information about a specific page including conditions and targeting settings.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "pageId",
+      type: ParameterType.String,
+      description: "The page ID to retrieve",
+      required: true,
+    },
+  ],
+})(getPage);
+
+tool({
+  name: "list_events",
+  description:
+    "Lists all events in an Optimizely Web Experimentation project with readable formatting.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "archived",
+      type: ParameterType.Boolean,
+      description: "Filter by archived status (optional)",
+      required: false,
+    },
+    {
+      name: "page",
+      type: ParameterType.Number,
+      description: "Page number for pagination (optional)",
+      required: false,
+    },
+    {
+      name: "per_page",
+      type: ParameterType.Number,
+      description: "Number of results per page (default: 50, max: 100)",
+      required: false,
+    },
+  ],
+})(listEvents);
+
+tool({
+  name: "get_event",
+  description:
+    "Gets detailed information about a specific event including event type and tracking configuration.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "eventId",
+      type: ParameterType.String,
+      description: "The event ID to retrieve",
+      required: true,
+    },
+  ],
+})(getEvent);
+
+tool({
+  name: "create_experiment",
+  description:
+    "Creates a new experiment in an Optimizely Web Experimentation project (demo purposes).",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+    {
+      name: "name",
+      type: ParameterType.String,
+      description: "The experiment name",
+      required: true,
+    },
+    {
+      name: "description",
+      type: ParameterType.String,
+      description: "Optional experiment description",
+      required: false,
+    },
+    {
+      name: "percentage_included",
+      type: ParameterType.Number,
+      description: "Percentage of traffic to include (1-100, default: 100)",
+      required: false,
+    },
+    {
+      name: "audience_ids",
+      type: ParameterType.String,
+      description:
+        "JSON string array of audience IDs to target (optional, e.g. '[123, 456]')",
+      required: false,
+    },
+    {
+      name: "variations",
+      type: ParameterType.String,
+      description:
+        'JSON string array of variation objects with name and weight properties (optional, e.g. \'[{"name":"Variation A","weight":50}]\')',
+      required: false,
+    },
+  ],
+})(createExperiment);
 
 if (bearerToken) {
   app.use("/tools/calculateRuntime", (req, res, next) => {
