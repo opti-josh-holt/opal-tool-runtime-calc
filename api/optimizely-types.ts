@@ -19,30 +19,39 @@ export interface OptimizelyProject {
 export interface OptimizelyExperiment {
   id: number;
   project_id: number;
-  campaign_id?: number;
+  campaign_id: number;
   created: string;
   description?: string;
-  edit_url: string;
-  experiment_type: string;
+  earliest?: string;
+  latest?: string;
   holdback: number;
   is_classic: boolean;
   last_modified: string;
   name: string;
-  percentage_included: number;
-  results_url: string;
-  status: "not_started" | "running" | "paused" | "archived";
+  status: "not_started" | "running" | "paused" | "archived" | "concluded";
+  traffic_allocation: number;
+  type: string;
+  allocation_policy: string;
   variations: OptimizelyVariation[];
-  audience_conditions?: string;
-  audience_ids?: number[];
+  audience_conditions: string;
   metrics?: OptimizelyMetric[];
+  page_ids?: number[];
+  url_targeting?: {
+    activation_type: string;
+    conditions: string;
+    edit_url: string;
+    key: string;
+    page_id: number;
+  };
+  changes?: any[];
 }
 
 export interface OptimizelyVariation {
-  id: number;
-  experiment_id: number;
+  variation_id: number;
   name: string;
   weight: number;
-  is_paused: boolean;
+  archived: boolean;
+  status: string;
   description?: string;
   actions?: OptimizelyAction[];
 }
@@ -204,11 +213,14 @@ export interface FormattedExperimentList {
     id: number;
     name: string;
     status: string;
+    type: string;
     created: string;
     last_modified: string;
     description?: string;
-    percentage_included: number;
+    traffic_allocation: number;
+    holdback: number;
     variations_count: number;
+    campaign_id: number;
   }[];
 }
 
@@ -217,22 +229,32 @@ export interface FormattedExperiment {
   name: string;
   description?: string;
   status: string;
+  type: string;
   created: string;
   last_modified: string;
   project_id: number;
-  percentage_included: number;
+  traffic_allocation: number;
   holdback: number;
-  edit_url: string;
-  results_url: string;
+  campaign_id: number;
+  allocation_policy: string;
+  url_targeting?: {
+    activation_type: string;
+    conditions: string;
+    edit_url: string;
+    key: string;
+    page_id: number;
+  };
   variations: {
     id: number;
     name: string;
     weight: number;
-    is_paused: boolean;
+    archived: boolean;
+    status: string;
     description?: string;
   }[];
-  audiences: number[];
+  audience_conditions: string;
   metrics_count: number;
+  page_ids: number[];
 }
 
 export interface FormattedAudienceList {

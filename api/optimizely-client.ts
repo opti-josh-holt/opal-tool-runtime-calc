@@ -125,15 +125,19 @@ export class OptimizelyClient {
     await this.rateLimiter.waitIfNeeded();
 
     try {
+      console.log(`DEBUG: Making ${method} request to: ${url}`);
       const response = await this.client.request({
         method,
         url,
         data,
       });
-
+      console.log(
+        `DEBUG: Request successful, response length:`,
+        JSON.stringify(response.data).length
+      );
       return response.data;
     } catch (error) {
-      console.error(`Optimizely API ${method} ${url} failed:`, error);
+      console.error(`DEBUG: Optimizely API ${method} ${url} failed:`, error);
       throw error;
     }
   }
@@ -153,6 +157,8 @@ export class OptimizelyClient {
     } = {}
   ): Promise<OptimizelyExperiment[]> {
     const params = new URLSearchParams();
+    // Add project_id as a filter parameter
+    params.append("project_id", projectId);
     if (options.page) params.append("page", options.page.toString());
     if (options.per_page)
       params.append("per_page", options.per_page.toString());
@@ -160,9 +166,8 @@ export class OptimizelyClient {
       params.append("include_classic", options.include_classic.toString());
     }
 
-    const url = `/projects/${projectId}/experiments${
-      params.toString() ? "?" + params.toString() : ""
-    }`;
+    const url = `/experiments?${params.toString()}`;
+    console.log(`DEBUG: Making request to: ${url}`);
     return this.makeRequest<OptimizelyExperiment[]>("GET", url);
   }
 
@@ -172,7 +177,7 @@ export class OptimizelyClient {
   ): Promise<OptimizelyExperiment> {
     return this.makeRequest<OptimizelyExperiment>(
       "GET",
-      `/projects/${projectId}/experiments/${experimentId}`
+      `/experiments/${experimentId}`
     );
   }
 
@@ -180,10 +185,15 @@ export class OptimizelyClient {
     projectId: string,
     experimentData: any
   ): Promise<OptimizelyExperiment> {
+    // Add project_id to the experiment data
+    const dataWithProjectId = {
+      ...experimentData,
+      project_id: parseInt(projectId),
+    };
     return this.makeRequest<OptimizelyExperiment>(
       "POST",
-      `/projects/${projectId}/experiments`,
-      experimentData
+      `/experiments`,
+      dataWithProjectId
     );
   }
 
@@ -193,8 +203,31 @@ export class OptimizelyClient {
   ): Promise<OptimizelyExperimentResults> {
     return this.makeRequest<OptimizelyExperimentResults>(
       "GET",
-      `/projects/${projectId}/experiments/${experimentId}/results`
+      `/experiments/${experimentId}/results`
     );
+  }
+
+  // Campaign methods (Web Experimentation alternative)
+  async listCampaigns(
+    projectId: string,
+    options: {
+      page?: number;
+      per_page?: number;
+      include_classic?: boolean;
+    } = {}
+  ): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (options.page) params.append("page", options.page.toString());
+    if (options.per_page)
+      params.append("per_page", options.per_page.toString());
+    if (options.include_classic !== undefined) {
+      params.append("include_classic", options.include_classic.toString());
+    }
+
+    const url = `/projects/${projectId}/campaigns${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+    return this.makeRequest<any[]>("GET", url);
   }
 
   // Audience methods

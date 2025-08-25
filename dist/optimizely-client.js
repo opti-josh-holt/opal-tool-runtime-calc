@@ -19,12 +19,12 @@ class RateLimiter {
     async waitIfNeeded() {
         const now = Date.now();
         // Remove requests older than 1 minute
-        this.requests = this.requests.filter(time => now - time < this.windowMs);
+        this.requests = this.requests.filter((time) => now - time < this.windowMs);
         if (this.requests.length >= this.maxRequests) {
             const oldestRequest = this.requests[0];
             const waitTime = this.windowMs - (now - oldestRequest) + 100; // +100ms buffer
             console.log(`Rate limit reached. Waiting ${waitTime}ms...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
             // Recursively check again after waiting
             return this.waitIfNeeded();
         }
@@ -37,7 +37,7 @@ class RateLimiter {
 class OptimizelyClientError extends Error {
     constructor(message, status, code, details) {
         super(message);
-        this.name = 'OptimizelyClientError';
+        this.name = "OptimizelyClientError";
         this.status = status;
         this.code = code;
         this.details = details;
@@ -54,10 +54,10 @@ class OptimizelyClient {
         this.apiToken = apiToken;
         this.rateLimiter = new RateLimiter();
         this.client = axios_1.default.create({
-            baseURL: 'https://api.optimizely.com/v2',
+            baseURL: "https://api.optimizely.com/v2",
             headers: {
-                'Authorization': `Bearer ${apiToken}`,
-                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiToken}`,
+                "Content-Type": "application/json",
             },
             timeout: 30000, // 30 second timeout
         });
@@ -74,115 +74,138 @@ class OptimizelyClient {
             return new OptimizelyClientError(`Optimizely API Error: ${message}`, status, code, data);
         }
         else if (error.request) {
-            return new OptimizelyClientError('Network error: Unable to reach Optimizely API', undefined, 'NETWORK_ERROR', error.message);
+            return new OptimizelyClientError("Network error: Unable to reach Optimizely API", undefined, "NETWORK_ERROR", error.message);
         }
         else {
-            return new OptimizelyClientError(`Request error: ${error.message}`, undefined, 'REQUEST_ERROR', error.message);
+            return new OptimizelyClientError(`Request error: ${error.message}`, undefined, "REQUEST_ERROR", error.message);
         }
     }
     async makeRequest(method, url, data) {
         await this.rateLimiter.waitIfNeeded();
         try {
+            console.log(`DEBUG: Making ${method} request to: ${url}`);
             const response = await this.client.request({
                 method,
                 url,
                 data,
             });
+            console.log(`DEBUG: Request successful, response length:`, JSON.stringify(response.data).length);
             return response.data;
         }
         catch (error) {
-            console.error(`Optimizely API ${method} ${url} failed:`, error);
+            console.error(`DEBUG: Optimizely API ${method} ${url} failed:`, error);
             throw error;
         }
     }
     // Project methods
     async getProject(projectId) {
-        return this.makeRequest('GET', `/projects/${projectId}`);
+        return this.makeRequest("GET", `/projects/${projectId}`);
     }
     // Experiment methods
     async listExperiments(projectId, options = {}) {
         const params = new URLSearchParams();
+        // Add project_id as a filter parameter
+        params.append("project_id", projectId);
         if (options.page)
-            params.append('page', options.page.toString());
+            params.append("page", options.page.toString());
         if (options.per_page)
-            params.append('per_page', options.per_page.toString());
+            params.append("per_page", options.per_page.toString());
         if (options.include_classic !== undefined) {
-            params.append('include_classic', options.include_classic.toString());
+            params.append("include_classic", options.include_classic.toString());
         }
-        const url = `/projects/${projectId}/experiments${params.toString() ? '?' + params.toString() : ''}`;
-        return this.makeRequest('GET', url);
+        const url = `/experiments?${params.toString()}`;
+        console.log(`DEBUG: Making request to: ${url}`);
+        return this.makeRequest("GET", url);
     }
     async getExperiment(projectId, experimentId) {
-        return this.makeRequest('GET', `/projects/${projectId}/experiments/${experimentId}`);
+        return this.makeRequest("GET", `/experiments/${experimentId}`);
     }
     async createExperiment(projectId, experimentData) {
-        return this.makeRequest('POST', `/projects/${projectId}/experiments`, experimentData);
+        // Add project_id to the experiment data
+        const dataWithProjectId = {
+            ...experimentData,
+            project_id: parseInt(projectId),
+        };
+        return this.makeRequest("POST", `/experiments`, dataWithProjectId);
     }
     async getExperimentResults(projectId, experimentId) {
-        return this.makeRequest('GET', `/projects/${projectId}/experiments/${experimentId}/results`);
+        return this.makeRequest("GET", `/experiments/${experimentId}/results`);
+    }
+    // Campaign methods (Web Experimentation alternative)
+    async listCampaigns(projectId, options = {}) {
+        const params = new URLSearchParams();
+        if (options.page)
+            params.append("page", options.page.toString());
+        if (options.per_page)
+            params.append("per_page", options.per_page.toString());
+        if (options.include_classic !== undefined) {
+            params.append("include_classic", options.include_classic.toString());
+        }
+        const url = `/projects/${projectId}/campaigns${params.toString() ? "?" + params.toString() : ""}`;
+        return this.makeRequest("GET", url);
     }
     // Audience methods
     async listAudiences(projectId, options = {}) {
         const params = new URLSearchParams();
         if (options.page)
-            params.append('page', options.page.toString());
+            params.append("page", options.page.toString());
         if (options.per_page)
-            params.append('per_page', options.per_page.toString());
+            params.append("per_page", options.per_page.toString());
         if (options.include_classic !== undefined) {
-            params.append('include_classic', options.include_classic.toString());
+            params.append("include_classic", options.include_classic.toString());
         }
-        const url = `/projects/${projectId}/audiences${params.toString() ? '?' + params.toString() : ''}`;
-        return this.makeRequest('GET', url);
+        const url = `/projects/${projectId}/audiences${params.toString() ? "?" + params.toString() : ""}`;
+        return this.makeRequest("GET", url);
     }
     async getAudience(projectId, audienceId) {
-        return this.makeRequest('GET', `/projects/${projectId}/audiences/${audienceId}`);
+        return this.makeRequest("GET", `/projects/${projectId}/audiences/${audienceId}`);
     }
     // Page methods
     async listPages(projectId, options = {}) {
         const params = new URLSearchParams();
         if (options.page)
-            params.append('page', options.page.toString());
+            params.append("page", options.page.toString());
         if (options.per_page)
-            params.append('per_page', options.per_page.toString());
+            params.append("per_page", options.per_page.toString());
         if (options.include_classic !== undefined) {
-            params.append('include_classic', options.include_classic.toString());
+            params.append("include_classic", options.include_classic.toString());
         }
-        const url = `/projects/${projectId}/pages${params.toString() ? '?' + params.toString() : ''}`;
-        return this.makeRequest('GET', url);
+        const url = `/projects/${projectId}/pages${params.toString() ? "?" + params.toString() : ""}`;
+        return this.makeRequest("GET", url);
     }
     async getPage(projectId, pageId) {
-        return this.makeRequest('GET', `/projects/${projectId}/pages/${pageId}`);
+        return this.makeRequest("GET", `/projects/${projectId}/pages/${pageId}`);
     }
     // Event methods
     async listEvents(projectId, options = {}) {
         const params = new URLSearchParams();
         if (options.page)
-            params.append('page', options.page.toString());
+            params.append("page", options.page.toString());
         if (options.per_page)
-            params.append('per_page', options.per_page.toString());
+            params.append("per_page", options.per_page.toString());
         if (options.include_classic !== undefined) {
-            params.append('include_classic', options.include_classic.toString());
+            params.append("include_classic", options.include_classic.toString());
         }
-        const url = `/projects/${projectId}/events${params.toString() ? '?' + params.toString() : ''}`;
-        return this.makeRequest('GET', url);
+        const url = `/projects/${projectId}/events${params.toString() ? "?" + params.toString() : ""}`;
+        return this.makeRequest("GET", url);
     }
     async getEvent(projectId, eventId) {
-        return this.makeRequest('GET', `/projects/${projectId}/events/${eventId}`);
+        return this.makeRequest("GET", `/projects/${projectId}/events/${eventId}`);
     }
     // Utility methods
     async healthCheck() {
         try {
             // Simple health check by making a minimal API call
-            await this.makeRequest('GET', '/projects?per_page=1');
+            await this.makeRequest("GET", "/projects?per_page=1");
             return {
-                status: 'healthy',
-                timestamp: new Date().toISOString()
+                status: "healthy",
+                timestamp: new Date().toISOString(),
             };
         }
         catch (error) {
             return {
-                status: 'unhealthy',
-                timestamp: new Date().toISOString()
+                status: "unhealthy",
+                timestamp: new Date().toISOString(),
             };
         }
     }
@@ -194,7 +217,7 @@ function getOptimizelyClient() {
     if (!optimizelyClient) {
         const apiToken = process.env.OPTIMIZELY_API_TOKEN;
         if (!apiToken) {
-            throw new Error('OPTIMIZELY_API_TOKEN environment variable is required');
+            throw new Error("OPTIMIZELY_API_TOKEN environment variable is required");
         }
         optimizelyClient = new OptimizelyClient(apiToken);
     }

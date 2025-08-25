@@ -16,13 +16,13 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); // Add JSON middleware
 // Serve PDFs from /tmp directory
-app.use('/pdfs', express_1.default.static('/tmp', {
+app.use("/pdfs", express_1.default.static("/tmp", {
     setHeaders: (res, path) => {
-        if (path.endsWith('.pdf')) {
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', 'inline');
+        if (path.endsWith(".pdf")) {
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", "inline");
         }
-    }
+    },
 }));
 const toolsService = new opal_tools_sdk_1.ToolsService(app);
 const bearerToken = process.env.BEARER_TOKEN;
@@ -249,6 +249,30 @@ async function generatePdf(params) {
     ],
 })(confluence_tools_1.createConfluencePage);
 // Optimizely Web Experimentation Tools
+(0, opal_tools_sdk_1.tool)({
+    name: "get_project_info",
+    description: "Gets basic project information to validate access and check project type (Web vs Feature Experimentation).",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.getProjectInfo);
+(0, opal_tools_sdk_1.tool)({
+    name: "test_campaigns",
+    description: "Tests if campaigns endpoint works as an alternative debugging tool for Web Experimentation projects.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.testCampaigns);
 (0, opal_tools_sdk_1.tool)({
     name: "list_experiments",
     description: "Lists all experiments in an Optimizely Web Experimentation project with readable formatting.",
@@ -490,7 +514,7 @@ async function generatePdf(params) {
         {
             name: "variations",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: "JSON string array of variation objects with name and weight properties (optional, e.g. '[{\"name\":\"Variation A\",\"weight\":50}]')",
+            description: 'JSON string array of variation objects with name and weight properties (optional, e.g. \'[{"name":"Variation A","weight":50}]\')',
             required: false,
         },
     ],

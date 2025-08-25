@@ -47,6 +47,110 @@ function getProjectId(params: { projectId: string }): string {
 }
 
 /**
+ * Get Project Info Tool
+ * Returns basic project information to validate access and project type
+ */
+export async function getProjectInfo(params: { projectId: string }): Promise<{
+  id: number;
+  name: string;
+  platform: string;
+  status: string;
+  created: string;
+  last_modified: string;
+  account_id: number;
+  debug_info: {
+    api_base_url: string;
+    project_endpoint: string;
+    experiments_endpoint: string;
+  };
+}> {
+  const projectId = getProjectId(params);
+  const client = getOptimizelyClient();
+
+  try {
+    const project = await client.getProject(projectId);
+
+    return {
+      id: project.id,
+      name: project.name,
+      platform: project.platform,
+      status: project.status,
+      created: formatDate(project.created),
+      last_modified: formatDate(project.last_modified),
+      account_id: project.account_id,
+      debug_info: {
+        api_base_url: "https://api.optimizely.com/v2",
+        project_endpoint: `/projects/${projectId}`,
+        experiments_endpoint: `/experiments?project_id=${projectId}`,
+      },
+    };
+  } catch (error) {
+    if (error instanceof OptimizelyClientError) {
+      if (error.status === 404) {
+        throw new Error(
+          `Project ${projectId} not found. Please verify the project ID is correct and your API token has access to it.`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
+      throw new Error(`Failed to get project info: ${error.message}`);
+    }
+    throw new Error(
+      `Unexpected error getting project info: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}
+
+/**
+ * Test Campaigns Tool
+ * Tests if campaigns endpoint works as an alternative to experiments
+ */
+export async function testCampaigns(params: { projectId: string }): Promise<{
+  success: boolean;
+  message: string;
+  campaigns_count?: number;
+  campaigns?: any[];
+}> {
+  const projectId = getProjectId(params);
+  const client = getOptimizelyClient();
+
+  try {
+    const campaigns = await client.listCampaigns(projectId, {
+      per_page: 10,
+      include_classic: true,
+    });
+
+    return {
+      success: true,
+      message: `Found ${campaigns.length} campaigns in project ${projectId}`,
+      campaigns_count: campaigns.length,
+      campaigns: campaigns.slice(0, 3), // Return first 3 for preview
+    };
+  } catch (error) {
+    if (error instanceof OptimizelyClientError) {
+      return {
+        success: false,
+        message: `Campaigns endpoint also failed: ${error.message} (Status: ${error.status})`,
+      };
+    }
+    return {
+      success: false,
+      message: `Unexpected error testing campaigns: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    };
+  }
+}
+
+/**
  * List Experiments Tool
  * Returns a formatted list of experiments in a project
  */
@@ -57,11 +161,17 @@ export async function listExperiments(
   const client = getOptimizelyClient();
 
   try {
+    console.log(
+      `DEBUG: Attempting to list experiments for project ${projectId}`
+    );
     const experiments = await client.listExperiments(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
       include_classic: true,
     });
+    console.log(
+      `DEBUG: Successfully retrieved ${experiments.length} experiments`
+    );
 
     return {
       project_id: projectId,
@@ -70,15 +180,33 @@ export async function listExperiments(
         id: exp.id,
         name: exp.name,
         status: exp.status,
+        type: exp.type,
         created: formatDate(exp.created),
         last_modified: formatDate(exp.last_modified),
         description: exp.description,
-        percentage_included: exp.percentage_included,
+        traffic_allocation: exp.traffic_allocation,
+        holdback: exp.holdback,
         variations_count: exp.variations?.length || 0,
+        campaign_id: exp.campaign_id,
       })),
     };
   } catch (error) {
+    console.error(`DEBUG: Error in listExperiments:`, error);
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 404) {
+        throw new Error(
+          `No experiments found for project ${projectId}. This could mean: 1) The project doesn't have any experiments created yet, 2) The experiments might be organized as campaigns instead, or 3) The experiments endpoint is not available for this project type. The project exists and is accessible (platform: web, active status), but the experiments endpoint returned 404. You may need to create experiments first in the Optimizely Web interface, or this project might use a different API structure.`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to list experiments: ${error.message}`);
     }
     throw new Error(
@@ -113,23 +241,27 @@ export async function getExperiment(
       name: experiment.name,
       description: experiment.description,
       status: experiment.status,
+      type: experiment.type,
       created: formatDate(experiment.created),
       last_modified: formatDate(experiment.last_modified),
       project_id: experiment.project_id,
-      percentage_included: experiment.percentage_included,
+      traffic_allocation: experiment.traffic_allocation,
       holdback: experiment.holdback,
-      edit_url: experiment.edit_url,
-      results_url: experiment.results_url,
+      campaign_id: experiment.campaign_id,
+      allocation_policy: experiment.allocation_policy,
+      url_targeting: experiment.url_targeting,
       variations:
         experiment.variations?.map((variation) => ({
-          id: variation.id,
+          id: variation.variation_id,
           name: variation.name,
           weight: variation.weight,
-          is_paused: variation.is_paused,
+          archived: variation.archived,
+          status: variation.status,
           description: variation.description,
         })) || [],
-      audiences: experiment.audience_ids || [],
+      audience_conditions: experiment.audience_conditions,
       metrics_count: experiment.metrics?.length || 0,
+      page_ids: experiment.page_ids || [],
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
@@ -571,23 +703,27 @@ export async function createExperiment(
       name: experiment.name,
       description: experiment.description,
       status: experiment.status,
+      type: experiment.type,
       created: formatDate(experiment.created),
       last_modified: formatDate(experiment.last_modified),
       project_id: experiment.project_id,
-      percentage_included: experiment.percentage_included,
+      traffic_allocation: experiment.traffic_allocation,
       holdback: experiment.holdback,
-      edit_url: experiment.edit_url,
-      results_url: experiment.results_url,
+      campaign_id: experiment.campaign_id,
+      allocation_policy: experiment.allocation_policy,
+      url_targeting: experiment.url_targeting,
       variations:
         experiment.variations?.map((variation) => ({
-          id: variation.id,
+          id: variation.variation_id,
           name: variation.name,
           weight: variation.weight,
-          is_paused: variation.is_paused,
+          archived: variation.archived,
+          status: variation.status,
           description: variation.description,
         })) || [],
-      audiences: experiment.audience_ids || [],
+      audience_conditions: experiment.audience_conditions,
       metrics_count: experiment.metrics?.length || 0,
+      page_ids: experiment.page_ids || [],
     };
 
     return {

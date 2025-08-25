@@ -26,6 +26,8 @@ import type {
 
 // Optimizely Web Experimentation Tools
 import {
+  getProjectInfo,
+  testCampaigns,
   listExperiments,
   getExperiment,
   listAudiences,
@@ -336,6 +338,34 @@ tool({
 })(createConfluencePage);
 
 // Optimizely Web Experimentation Tools
+tool({
+  name: "get_project_info",
+  description:
+    "Gets basic project information to validate access and check project type (Web vs Feature Experimentation).",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+  ],
+})(getProjectInfo);
+
+tool({
+  name: "test_campaigns",
+  description:
+    "Tests if campaigns endpoint works as an alternative debugging tool for Web Experimentation projects.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+  ],
+})(testCampaigns);
+
 tool({
   name: "list_experiments",
   description:
