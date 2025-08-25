@@ -309,6 +309,22 @@ export async function getAudience(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 404) {
+        throw new Error(
+          `Audience with ID '${audienceId}' not found in project ${projectId}. This could mean: 1) The audience ID is incorrect or doesn't exist, 2) The audience has been archived or deleted, 3) Your API token doesn't have access to this specific audience, or 4) The audience might be in a different project. Please verify the audience ID is correct and that it exists in project ${projectId}. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed when getting audience ${audienceId}. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to audience ${audienceId} in project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to get audience: ${error.message}`);
     }
     throw new Error(
@@ -419,6 +435,22 @@ export async function getPage(params: GetPageParams): Promise<FormattedPage> {
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 404) {
+        throw new Error(
+          `Page with ID '${pageId}' not found in project ${projectId}. This could mean: 1) The page ID is incorrect or doesn't exist, 2) The page has been archived or deleted, 3) Your API token doesn't have access to this specific page, or 4) The page might be in a different project. Please verify the page ID is correct and that it exists in project ${projectId}. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed when getting page ${pageId}. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to page ${pageId} in project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to get page: ${error.message}`);
     }
     throw new Error(
@@ -533,6 +565,22 @@ export async function getEvent(
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
+      // Provide more specific error messages based on status code
+      if (error.status === 404) {
+        throw new Error(
+          `Event with ID '${eventId}' not found in project ${projectId}. This could mean: 1) The event ID is incorrect or doesn't exist, 2) The event has been archived or deleted, 3) Your API token doesn't have access to this specific event, or 4) The event might be in a different project. Please verify the event ID is correct and that it exists in project ${projectId}. API Error: ${
+            error.message
+          } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
+        );
+      } else if (error.status === 401) {
+        throw new Error(
+          `Authentication failed when getting event ${eventId}. Please check your OPTIMIZELY_API_TOKEN.`
+        );
+      } else if (error.status === 403) {
+        throw new Error(
+          `Access forbidden to event ${eventId} in project ${projectId}. Your API token may not have the required permissions.`
+        );
+      }
       throw new Error(`Failed to get event: ${error.message}`);
     }
     throw new Error(

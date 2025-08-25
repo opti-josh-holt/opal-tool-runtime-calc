@@ -241,10 +241,15 @@ export class OptimizelyClient {
     projectId: string,
     audienceId: string
   ): Promise<OptimizelyAudience> {
-    return this.makeRequest<OptimizelyAudience>(
-      "GET",
-      `/projects/${projectId}/audiences/${audienceId}`
+    const url = `/audiences/${audienceId}`;
+    console.log(`DEBUG: Getting audience with URL: ${url}`);
+    console.log(
+      `DEBUG: Audience ID: ${audienceId}, Type: ${typeof audienceId}, Length: ${
+        audienceId.length
+      }`
     );
+
+    return this.makeRequest<OptimizelyAudience>("GET", url);
   }
 
   // Page methods
@@ -270,10 +275,15 @@ export class OptimizelyClient {
   }
 
   async getPage(projectId: string, pageId: string): Promise<OptimizelyPage> {
-    return this.makeRequest<OptimizelyPage>(
-      "GET",
-      `/projects/${projectId}/pages/${pageId}`
+    const url = `/pages/${pageId}`;
+    console.log(`DEBUG: Getting page with URL: ${url}`);
+    console.log(
+      `DEBUG: Page ID: ${pageId}, Type: ${typeof pageId}, Length: ${
+        pageId.length
+      }`
     );
+
+    return this.makeRequest<OptimizelyPage>("GET", url);
   }
 
   // Event methods
@@ -299,10 +309,15 @@ export class OptimizelyClient {
   }
 
   async getEvent(projectId: string, eventId: string): Promise<OptimizelyEvent> {
-    return this.makeRequest<OptimizelyEvent>(
-      "GET",
-      `/projects/${projectId}/events/${eventId}`
+    const url = `/events/${eventId}`;
+    console.log(`DEBUG: Getting event with URL: ${url}`);
+    console.log(
+      `DEBUG: Event ID: ${eventId}, Type: ${typeof eventId}, Length: ${
+        eventId.length
+      }`
     );
+
+    return this.makeRequest<OptimizelyEvent>("GET", url);
   }
 
   // Utility methods
