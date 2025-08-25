@@ -1,211 +1,65 @@
 import { confluenceClient, type ConfluencePage } from './confluence-client';
 
-function escapeXmlSpecialChars(text: string): string {
-  return text
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-    .replace(/–/g, '-')         // Convert en-dash to regular dash
-    .replace(/—/g, '-')         // Convert em-dash to regular dash  
-    .replace(/"/g, '"')         // Convert smart quotes to regular quotes
+function convertMarkdownToConfluenceStorage(markdown: string): string {
+  // Very simple approach - just convert to basic HTML and clean special chars
+  let result = markdown;
+  
+  // Replace problematic characters first
+  result = result
+    .replace(/–/g, '-')           // En-dash to regular dash
+    .replace(/—/g, '-')           // Em-dash to regular dash
+    .replace(/"/g, '"')           // Smart quotes to regular quotes
     .replace(/"/g, '"')
     .replace(/'/g, "'")
-    .replace(/'/g, "'");
-}
-
-function convertMarkdownToConfluenceStorage(markdown: string): string {
-  // First, let's process the markdown line by line to identify blocks more accurately
-  const lines = markdown.split('\n');
-  const blocks: string[] = [];
-  let currentBlock: string[] = [];
-  let inTable = false;
-  let inList = false;
+    .replace(/'/g, "'")
+    .replace(/&/g, 'and');        // Ampersand to word
   
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
+  // Convert markdown to very basic HTML
+  result = result
+    // Headers
+    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.*)$/gm, '<h1>$1</h1>')
     
-    // Empty line - end current block
-    if (!trimmed) {
-      if (currentBlock.length > 0) {
-        blocks.push(currentBlock.join('\n'));
-        currentBlock = [];
-        inTable = false;
-        inList = false;
-      }
-      continue;
-    }
+    // Bold and italic (do this before other replacements)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     
-    // Check if this line starts a new block type
-    const isHeader = trimmed.match(/^#{1,3}\s/);
-    const isListItem = trimmed.startsWith('- ');
-    const isTableLine = trimmed.includes('|');
-    const isSeparator = trimmed.includes('---');
+    // Lists (simple approach)
+    .replace(/^- (.*)$/gm, '<li>$1</li>')
     
-    // If we're switching block types, save current block
-    if (currentBlock.length > 0) {
-      if ((isHeader) || 
-          (isListItem && !inList) || 
-          (isTableLine && !inTable && !isSeparator) ||
-          (!isListItem && inList) ||
-          (!isTableLine && inTable)) {
-        blocks.push(currentBlock.join('\n'));
-        currentBlock = [];
-        inTable = false;
-        inList = false;
-      }
-    }
+    // Tables - just convert to simple text for now to avoid XML issues
+    .replace(/\|.*\|/g, (match) => {
+      // Convert table rows to simple text
+      return match.replace(/\|/g, ' | ').trim();
+    })
+    .replace(/^\|.*\|$/gm, '$&<br/>')
     
-    // Add line to current block
-    currentBlock.push(line);
-    
-    // Update block type tracking
-    if (isListItem) inList = true;
-    if (isTableLine) inTable = true;
-  }
+    // Line breaks
+    .replace(/\n\n/g, '</p><p>')    // Double newlines become paragraph breaks
+    .replace(/\n/g, '<br/>');       // Single newlines become breaks
   
-  // Don't forget the last block
-  if (currentBlock.length > 0) {
-    blocks.push(currentBlock.join('\n'));
-  }
+  // Wrap in paragraphs and clean up
+  result = '<p>' + result + '</p>';
   
-  // Now convert each block
-  const convertedBlocks: string[] = [];
+  // Clean up formatting step by step
+  result = result
+    .replace(/<p><\/p>/g, '')                    // Remove empty paragraphs
+    .replace(/<br\/><h([1-6])>/g, '</p><h$1>')   // Close paragraph before header
+    .replace(/<h([1-6])>(.*?)<\/h[1-6]><br\/>/g, '<h$1>$2</h$1><p>') // Start new paragraph after header
+    .replace(/<p>(<h[1-6]>.*?<\/h[1-6]>)<\/p>/g, '$1') // Remove any remaining paragraph wrapping around headers
+    .replace(/<br\/><li>/g, '</p><ul><li>')      // Start list, end paragraph
+    .replace(/<\/li><br\/>/g, '</li>')           // Clean list item endings
+    .replace(/<li>(.*?)<\/li><li>/g, '<li>$1</li><li>') // Clean up list items
+    .replace(/(<\/li>)(?!<\/ul>)(?!<li>)/g, '$1</ul><p>') // End list and start paragraph
+    .replace(/<\/ul><ul>/g, '')                  // Merge adjacent lists
+    .replace(/<br\/><br\/>/g, '<br/>')           // Reduce double breaks
+    .replace(/<p><br\/>/g, '<p>')                // Clean paragraph starts
+    .replace(/<br\/><\/p>/g, '</p>')             // Clean paragraph ends
+    .replace(/<p>$/, '')                         // Remove trailing empty paragraph start
+    .replace(/^<\/p>/, '');                      // Remove leading paragraph end
   
-  for (const block of blocks) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
-    
-    // Handle headers followed by content
-    if (trimmed.match(/^#{1,3}\s/)) {
-      const lines = trimmed.split('\n');
-      const convertedLines: string[] = [];
-      
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.match(/^#{1,3}\s/)) {
-          const headerConverted = trimmedLine
-            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-            .replace(/^# (.*)$/gm, '<h1>$1</h1>');
-          convertedLines.push(headerConverted);
-        } else if (trimmedLine) {
-          // This is content after a header
-          const cleaned = escapeXmlSpecialChars(trimmedLine);
-          const formatted = cleaned
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-          convertedLines.push(`<p>${formatted}</p>`);
-        }
-      }
-      
-      convertedBlocks.push(convertedLines.join(''));
-      continue;
-    }
-    
-    // Handle tables
-    if (trimmed.includes('|') && trimmed.includes('---')) {
-      convertedBlocks.push(convertTableToConfluence(trimmed));
-      continue;
-    }
-    
-    // Handle lists
-    if (trimmed.match(/^- /m)) {
-      const listItems = trimmed
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.startsWith('- '))
-        .map(line => {
-          const content = line.substring(2); // Remove "- "
-          const cleaned = escapeXmlSpecialChars(content);
-          const formatted = cleaned
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-          return `<li>${formatted}</li>`;
-        })
-        .join('');
-      
-      if (listItems) {
-        convertedBlocks.push(`<ul>${listItems}</ul>`);
-      }
-      continue;
-    }
-    
-    // Handle regular paragraphs
-    const cleaned = escapeXmlSpecialChars(trimmed);
-    const formatted = cleaned
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    
-    const lines = formatted.split('\n').map(line => line.trim()).filter(line => line);
-    if (lines.length > 0) {
-      convertedBlocks.push(`<p>${lines.join('<br/>')}</p>`);
-    }
-  }
-  
-  return convertedBlocks.join('');
-}
-
-function convertTableToConfluence(tableMarkdown: string): string {
-  const lines = tableMarkdown.split('\n').map(line => line.trim()).filter(line => line);
-  if (lines.length < 3) return `<p>${tableMarkdown.replace(/\n/g, '<br/>')}</p>`;
-  
-  // Find header row and separator
-  let headerIndex = -1;
-  let separatorIndex = -1;
-  
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('|')) {
-      if (headerIndex === -1) {
-        headerIndex = i;
-      } else if (lines[i].includes('---') && separatorIndex === -1) {
-        separatorIndex = i;
-        break;
-      }
-    }
-  }
-  
-  if (headerIndex === -1 || separatorIndex === -1 || separatorIndex !== headerIndex + 1) {
-    return `<p>${tableMarkdown.replace(/\n/g, '<br/>')}</p>`;
-  }
-  
-  const headers = lines[headerIndex].split('|').map(h => h.trim()).filter(h => h);
-  const dataRows = lines.slice(separatorIndex + 1);
-  
-  let table = '<table><tbody>';
-  
-  // Header row
-  if (headers.length > 0) {
-    table += '<tr>';
-    headers.forEach(header => {
-      const cleaned = escapeXmlSpecialChars(header);
-      const formatted = cleaned
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-      table += `<th>${formatted}</th>`;
-    });
-    table += '</tr>';
-  }
-  
-  // Data rows
-  dataRows.forEach(line => {
-    if (line.includes('|')) {
-      const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
-      if (cells.length > 0) {
-        table += '<tr>';
-        cells.forEach(cell => {
-          const cleaned = escapeXmlSpecialChars(cell);
-          const formatted = cleaned
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-          table += `<td>${formatted}</td>`;
-        });
-        table += '</tr>';
-      }
-    }
-  });
-  
-  table += '</tbody></table>';
-  return table;
+  return result;
 }
 
 export type ReadConfluencePageParams = {
