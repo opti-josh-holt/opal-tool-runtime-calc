@@ -7,6 +7,12 @@ This repository provides a complete, working example of an Optimizely Opal tool.
   - Markdown to PDF converter with temporary file serving
   - JIRA integration tools for reading, updating, and creating issues
   - Confluence integration tools for reading, updating, and creating pages
+  - **Optimizely Web Experimentation tools** for comprehensive project management:
+    - Project overview with rich insights and statistics
+    - Experiment management (list, get details, create, get results)
+    - Audience management (list, get details)
+    - Event management (list, get details)
+    - Page management (list, get details)
 - **Express.js Server:** A lightweight server to host the tool.
 - **TypeScript:** Type-safe code for better maintainability.
 - **Bearer Token Authentication:** Secures the tool's execution endpoint.
@@ -18,6 +24,7 @@ This sample project was built to codify several key lessons learned during devel
 
 1.  **Vercel Deployment:** Vercel requires a specific project structure for serverless functions. All backend code must reside in an `/api` directory.
 2.  **Selective Authentication:** A common pitfall is applying authentication middleware globally. This breaks the public `/discovery` endpoint that Opal relies on. Authentication must be applied _only_ to the specific tool execution route (e.g., `/tools/calculate_experiment_runtime`).
+3.  **Rich Data Aggregation:** The Optimizely project overview tool demonstrates how to transform basic API responses into comprehensive, well-structured data that provides immediate insights and actionable information for users.
 
 ## Project Structure
 
@@ -33,6 +40,9 @@ The project follows the structure required by Vercel for serverless Node.js func
 │   └── jira-tools.ts       # JIRA business logic (read/update/create issues)
 │   └── confluence-client.ts      # Confluence API client with PAT authentication
 │   └── confluence-tools.ts       # Confluence business logic (read/update/create pages)
+│   └── optimizely-client.ts      # Optimizely Web API client with rate limiting
+│   └── optimizely-tools.ts       # Optimizely business logic (experiments, audiences, events, pages)
+│   └── optimizely-types.ts       # TypeScript types for Optimizely API responses
 ├── .gitignore
 ├── package.json
 ├── README.md
@@ -47,6 +57,9 @@ The project follows the structure required by Vercel for serverless Node.js func
 - `api/jira-tools.ts`: Business logic for JIRA operations (read, update, create issues).
 - `api/confluence-client.ts`: HTTP client for Confluence Server API with Personal Access Token authentication.
 - `api/confluence-tools.ts`: Business logic for Confluence operations (read, update, create pages).
+- `api/optimizely-client.ts`: HTTP client for Optimizely Web Experimentation API with rate limiting and error handling.
+- `api/optimizely-tools.ts`: Business logic for Optimizely operations including comprehensive project overview.
+- `api/optimizely-types.ts`: TypeScript type definitions for Optimizely API requests and responses.
 - `vercel.json`: Configures Vercel to correctly handle the Express application as a single serverless function.
 
 ## Getting Started
@@ -81,6 +94,7 @@ The project follows the structure required by Vercel for serverless Node.js func
     BASE_URL="https://your-project-name.vercel.app"
     JIRA_PAT="your-jira-personal-access-token"
     CONFLUENCE_PAT="your-confluence-personal-access-token"
+    OPTIMIZELY_API_TOKEN="your-optimizely-api-token"
     ```
 
 4.  **Run the development server:**
@@ -110,6 +124,7 @@ The project follows the structure required by Vercel for serverless Node.js func
       - `BASE_URL`: Your full Vercel app URL (e.g., `https://your-project-name.vercel.app`)
       - `JIRA_PAT`: Your JIRA Personal Access Token for API authentication
       - `CONFLUENCE_PAT`: Your Confluence Personal Access Token for API authentication
+      - `OPTIMIZELY_API_TOKEN`: Your Optimizely Web Experimentation API token
     - **Important:** Ensure the bearer token is strong and kept secret.
 
 4.  **Deploy:**
@@ -191,13 +206,15 @@ All tools are protected by bearer token authentication.
   }
   ```
 
-**Notes:** 
+**Notes:**
+
 - Generated PDFs are automatically cleaned up after 1 hour for now.
 - The `pdfUrl` returns a full absolute URL to ensure it works properly with Opal.
 
 #### JIRA Integration Tools
 
 **Read JIRA Issue:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/read_jira_issue`
 - **Method:** `POST`
 - **Headers:**
@@ -211,6 +228,7 @@ All tools are protected by bearer token authentication.
   ```
 
 **Update JIRA Issue:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/update_jira_issue`
 - **Method:** `POST`
 - **Headers:**
@@ -228,6 +246,7 @@ All tools are protected by bearer token authentication.
   ```
 
 **Create JIRA Issue:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/create_jira_issue`
 - **Method:** `POST`
 - **Headers:**
@@ -247,6 +266,7 @@ All tools are protected by bearer token authentication.
 #### Confluence Integration Tools
 
 **Read Confluence Page:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/read_confluence_page`
 - **Method:** `POST`
 - **Headers:**
@@ -267,6 +287,7 @@ All tools are protected by bearer token authentication.
   ```
 
 **Update Confluence Page:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/update_confluence_page`
 - **Method:** `POST`
 - **Headers:**
@@ -282,6 +303,7 @@ All tools are protected by bearer token authentication.
   ```
 
 **Create Confluence Page:**
+
 - **URL:** `https://<your-project-name>.vercel.app/tools/create_confluence_page`
 - **Method:** `POST`
 - **Headers:**
@@ -294,6 +316,156 @@ All tools are protected by bearer token authentication.
     "title": "New Page Title",
     "content": "<p>New page content in Confluence storage format</p>",
     "parentPageId": "987654321"
+  }
+  ```
+
+#### Optimizely Web Experimentation Tools
+
+The application provides comprehensive tools for managing Optimizely Web Experimentation projects:
+
+**Project Overview (NEW!):**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_project_overview`
+- **Method:** `POST`
+- **Headers:**
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <your-secret-token-here>`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952"
+  }
+  ```
+- **Response:** Rich project overview with:
+  - Summary statistics and insights
+  - Experiments grouped by status (running, concluded, archived, etc.)
+  - Audience targeting breakdown
+  - Event categorization (click, pageview, custom)
+  - Popular testing domains
+  - Automated project health insights
+
+**List Experiments:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/list_experiments`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "status": "running",
+    "per_page": 50
+  }
+  ```
+
+**Get Experiment Details:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_experiment`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "experimentId": "20502780186"
+  }
+  ```
+
+**Get Experiment Results:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_experiment_results`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "experimentId": "20502780186"
+  }
+  ```
+
+**Create Experiment:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/create_experiment`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "name": "New Homepage Test",
+    "description": "Testing new homepage layout",
+    "percentage_included": 100,
+    "audience_ids": "[20520700921]",
+    "variations": "[{\"name\":\"Original\",\"weight\":50},{\"name\":\"Variation 1\",\"weight\":50}]"
+  }
+  ```
+
+**List Audiences:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/list_audiences`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "archived": false
+  }
+  ```
+
+**Get Audience Details:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_audience`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "audienceId": "20520700921"
+  }
+  ```
+
+**List Events:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/list_events`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "archived": false
+  }
+  ```
+
+**Get Event Details:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_event`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "eventId": "20903330067"
+  }
+  ```
+
+**List Pages:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/list_pages`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "archived": false
+  }
+  ```
+
+**Get Page Details:**
+
+- **URL:** `https://<your-project-name>.vercel.app/tools/get_page`
+- **Method:** `POST`
+- **Body (Example):**
+  ```json
+  {
+    "projectId": "20492164952",
+    "pageId": "20511412315"
   }
   ```
 
@@ -325,5 +497,30 @@ curl --request POST \
   --data '{
     "markdown": "# Test Document\n\nThis is a **test** PDF generation.",
     "filename": "test-document"
+  }'
+```
+
+**Optimizely Project Overview:**
+
+```bash
+curl --request POST \
+  --url 'https://<your-project-name>.vercel.app/tools/get_project_overview' \
+  --header 'Authorization: Bearer your-secret-token-here' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "projectId": "20492164952"
+  }'
+```
+
+**List Optimizely Experiments:**
+
+```bash
+curl --request POST \
+  --url 'https://<your-project-name>.vercel.app/tools/list_experiments' \
+  --header 'Authorization: Bearer your-secret-token-here' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "projectId": "20492164952",
+    "status": "running"
   }'
 ```

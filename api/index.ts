@@ -36,6 +36,7 @@ import {
   getEvent,
   getExperimentResults,
   createExperiment,
+  getProjectOverview,
 } from "./optimizely-tools";
 import type {
   ListExperimentsParams,
@@ -48,6 +49,7 @@ import type {
   GetEventParams,
   GetExperimentResultsParams,
   CreateExperimentParams,
+  ProjectOverviewParams,
 } from "./optimizely-types";
 
 dotenv.config();
@@ -376,13 +378,15 @@ tool({
     {
       name: "experimentId",
       type: ParameterType.String,
-      description: "The experiment ID to retrieve (optional if experimentName is provided)",
+      description:
+        "The experiment ID to retrieve (optional if experimentName is provided)",
       required: false,
     },
     {
       name: "experimentName",
       type: ParameterType.String,
-      description: "The experiment name to retrieve (optional if experimentId is provided)",
+      description:
+        "The experiment name to retrieve (optional if experimentId is provided)",
       required: false,
     },
   ],
@@ -454,13 +458,15 @@ tool({
     {
       name: "audienceId",
       type: ParameterType.String,
-      description: "The audience ID to retrieve (optional if audienceName is provided)",
+      description:
+        "The audience ID to retrieve (optional if audienceName is provided)",
       required: false,
     },
     {
       name: "audienceName",
       type: ParameterType.String,
-      description: "The audience name to retrieve (optional if audienceId is provided)",
+      description:
+        "The audience name to retrieve (optional if audienceId is provided)",
       required: false,
     },
   ],
@@ -570,13 +576,15 @@ tool({
     {
       name: "eventId",
       type: ParameterType.String,
-      description: "The event ID to retrieve (optional if eventName is provided)",
+      description:
+        "The event ID to retrieve (optional if eventName is provided)",
       required: false,
     },
     {
       name: "eventName",
       type: ParameterType.String,
-      description: "The event name to retrieve (optional if eventId is provided)",
+      description:
+        "The event name to retrieve (optional if eventId is provided)",
       required: false,
     },
   ],
@@ -627,6 +635,22 @@ tool({
     },
   ],
 })(createExperiment);
+
+// Project Overview Tool - NEW comprehensive overview with rich insights
+tool({
+  name: "get_project_overview",
+  description:
+    "Gets a comprehensive overview of an Optimizely Web Experimentation project including all experiments, audiences, events, and pages with rich insights, status breakdowns, and automated analysis. This provides a complete project health dashboard with categorized data and actionable insights.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description:
+        "The Optimizely project ID to get the comprehensive overview for",
+      required: true,
+    },
+  ],
+})(getProjectOverview);
 
 if (bearerToken) {
   app.use("/tools/calculateRuntime", (req, res, next) => {

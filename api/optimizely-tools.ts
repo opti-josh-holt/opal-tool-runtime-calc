@@ -56,7 +56,9 @@ function getProjectId(params: { projectId: string }): string {
 /**
  * Helper function to resolve entity name to ID by searching through list results
  */
-async function resolveEntityByName<T extends { id: string | number; name: string }>(
+async function resolveEntityByName<
+  T extends { id: string | number; name: string }
+>(
   entityName: string,
   listFunction: () => Promise<T[]>,
   entityType: string
@@ -73,7 +75,9 @@ async function resolveEntityByName<T extends { id: string | number; name: string
   }
 
   if (matches.length > 1) {
-    const matchNames = matches.map((m) => `"${m.name}" (ID: ${m.id})`).join(", ");
+    const matchNames = matches
+      .map((m) => `"${m.name}" (ID: ${m.id})`)
+      .join(", ");
     throw new Error(
       `Multiple ${entityType}s found with name "${entityName}": ${matchNames}. Please use the specific ID instead.`
     );
@@ -183,7 +187,9 @@ export async function getExperiment(
     throw new Error("Either experimentId or experimentName is required");
   }
   if (experimentId && experimentName) {
-    throw new Error("Please provide either experimentId or experimentName, not both");
+    throw new Error(
+      "Please provide either experimentId or experimentName, not both"
+    );
   }
 
   const client = getOptimizelyClient();
@@ -206,7 +212,10 @@ export async function getExperiment(
     console.log(
       `DEBUG: Getting experiment ${resolvedExperimentId} from project ${projectId}`
     );
-    const experiment = await client.getExperiment(projectId, resolvedExperimentId);
+    const experiment = await client.getExperiment(
+      projectId,
+      resolvedExperimentId
+    );
 
     return {
       id: String(experiment.id), // Ensure experiment ID is string
@@ -239,19 +248,29 @@ export async function getExperiment(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
-        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
+        const identifier = experimentName
+          ? `name '${experimentName}'`
+          : `ID '${resolvedExperimentId}'`;
         throw new Error(
-          `Experiment with ${identifier} not found in project ${projectId}. This could mean: 1) The experiment ${experimentName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ${experimentName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
+          `Experiment with ${identifier} not found in project ${projectId}. This could mean: 1) The experiment ${
+            experimentName ? "name" : "ID"
+          } is incorrect or doesn't exist, 2) The experiment has been archived or deleted, 3) Your API token doesn't have access to this specific experiment, or 4) The experiment might be in a different project. Please verify the experiment ${
+            experimentName ? "name" : "ID"
+          } is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
-        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
+        const identifier = experimentName
+          ? `name '${experimentName}'`
+          : `ID '${resolvedExperimentId}'`;
         throw new Error(
           `Authentication failed when getting experiment with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
-        const identifier = experimentName ? `name '${experimentName}'` : `ID '${resolvedExperimentId}'`;
+        const identifier = experimentName
+          ? `name '${experimentName}'`
+          : `ID '${resolvedExperimentId}'`;
         throw new Error(
           `Access forbidden to experiment with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
@@ -348,7 +367,9 @@ export async function getAudience(
     throw new Error("Either audienceId or audienceName is required");
   }
   if (audienceId && audienceName) {
-    throw new Error("Please provide either audienceId or audienceName, not both");
+    throw new Error(
+      "Please provide either audienceId or audienceName, not both"
+    );
   }
 
   const client = getOptimizelyClient();
@@ -386,19 +407,29 @@ export async function getAudience(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
-        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
+        const identifier = audienceName
+          ? `name '${audienceName}'`
+          : `ID '${resolvedAudienceId}'`;
         throw new Error(
-          `Audience with ${identifier} not found in project ${projectId}. This could mean: 1) The audience ${audienceName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The audience has been archived or deleted, 3) Your API token doesn't have access to this specific audience, or 4) The audience might be in a different project. Please verify the audience ${audienceName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
+          `Audience with ${identifier} not found in project ${projectId}. This could mean: 1) The audience ${
+            audienceName ? "name" : "ID"
+          } is incorrect or doesn't exist, 2) The audience has been archived or deleted, 3) Your API token doesn't have access to this specific audience, or 4) The audience might be in a different project. Please verify the audience ${
+            audienceName ? "name" : "ID"
+          } is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
-        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
+        const identifier = audienceName
+          ? `name '${audienceName}'`
+          : `ID '${resolvedAudienceId}'`;
         throw new Error(
           `Authentication failed when getting audience with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
-        const identifier = audienceName ? `name '${audienceName}'` : `ID '${resolvedAudienceId}'`;
+        const identifier = audienceName
+          ? `name '${audienceName}'`
+          : `ID '${resolvedAudienceId}'`;
         throw new Error(
           `Access forbidden to audience with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
@@ -533,19 +564,29 @@ export async function getPage(params: GetPageParams): Promise<FormattedPage> {
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
-        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
+        const identifier = pageName
+          ? `name '${pageName}'`
+          : `ID '${resolvedPageId}'`;
         throw new Error(
-          `Page with ${identifier} not found in project ${projectId}. This could mean: 1) The page ${pageName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The page has been archived or deleted, 3) Your API token doesn't have access to this specific page, or 4) The page might be in a different project. Please verify the page ${pageName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
+          `Page with ${identifier} not found in project ${projectId}. This could mean: 1) The page ${
+            pageName ? "name" : "ID"
+          } is incorrect or doesn't exist, 2) The page has been archived or deleted, 3) Your API token doesn't have access to this specific page, or 4) The page might be in a different project. Please verify the page ${
+            pageName ? "name" : "ID"
+          } is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
-        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
+        const identifier = pageName
+          ? `name '${pageName}'`
+          : `ID '${resolvedPageId}'`;
         throw new Error(
           `Authentication failed when getting page with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
-        const identifier = pageName ? `name '${pageName}'` : `ID '${resolvedPageId}'`;
+        const identifier = pageName
+          ? `name '${pageName}'`
+          : `ID '${resolvedPageId}'`;
         throw new Error(
           `Access forbidden to page with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
@@ -684,19 +725,29 @@ export async function getEvent(
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
       if (error.status === 404) {
-        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
+        const identifier = eventName
+          ? `name '${eventName}'`
+          : `ID '${resolvedEventId}'`;
         throw new Error(
-          `Event with ${identifier} not found in project ${projectId}. This could mean: 1) The event ${eventName ? 'name' : 'ID'} is incorrect or doesn't exist, 2) The event has been archived or deleted, 3) Your API token doesn't have access to this specific event, or 4) The event might be in a different project. Please verify the event ${eventName ? 'name' : 'ID'} is correct and that it exists in project ${projectId}. API Error: ${
+          `Event with ${identifier} not found in project ${projectId}. This could mean: 1) The event ${
+            eventName ? "name" : "ID"
+          } is incorrect or doesn't exist, 2) The event has been archived or deleted, 3) Your API token doesn't have access to this specific event, or 4) The event might be in a different project. Please verify the event ${
+            eventName ? "name" : "ID"
+          } is correct and that it exists in project ${projectId}. API Error: ${
             error.message
           } ${error.details ? `(${JSON.stringify(error.details)})` : ""}`
         );
       } else if (error.status === 401) {
-        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
+        const identifier = eventName
+          ? `name '${eventName}'`
+          : `ID '${resolvedEventId}'`;
         throw new Error(
           `Authentication failed when getting event with ${identifier}. Please check your OPTIMIZELY_API_TOKEN.`
         );
       } else if (error.status === 403) {
-        const identifier = eventName ? `name '${eventName}'` : `ID '${resolvedEventId}'`;
+        const identifier = eventName
+          ? `name '${eventName}'`
+          : `ID '${resolvedEventId}'`;
         throw new Error(
           `Access forbidden to event with ${identifier} in project ${projectId}. Your API token may not have the required permissions.`
         );
