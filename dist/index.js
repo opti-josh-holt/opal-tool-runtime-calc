@@ -509,7 +509,7 @@ async function generatePdf(params) {
 })(optimizely_tools_1.getEvent);
 (0, opal_tools_sdk_1.tool)({
     name: "create_experiment",
-    description: "Creates a new experiment in an Optimizely Web Experimentation project (demo purposes).",
+    description: "Creates a new experiment in an Optimizely Web Experimentation project. Either url_targeting or page_ids must be provided to specify where the experiment runs.",
     parameters: [
         {
             name: "projectId",
@@ -545,6 +545,18 @@ async function generatePdf(params) {
             name: "variations",
             type: opal_tools_sdk_1.ParameterType.String,
             description: 'JSON string array of variation objects with name and weight properties (optional, e.g. \'[{"name":"Variation A","weight":50}]\')',
+            required: false,
+        },
+        {
+            name: "url_targeting",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: 'JSON string object with URL targeting configuration (e.g. \'{"edit_url":"https://example.com/page","activation_type":"immediate"}\') - Either this or page_ids is required',
+            required: false,
+        },
+        {
+            name: "page_ids",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "JSON string array of page IDs where the experiment should run (e.g. '[\"12345\", \"67890\"]') - Either this or url_targeting is required",
             required: false,
         },
     ],

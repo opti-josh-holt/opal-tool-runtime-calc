@@ -102,7 +102,7 @@ async function calculateRuntime(
   params: CalculateRuntimeParams
 ): Promise<{ days: number | null }> {
   const { BCR, MDE, sigLevel, numVariations, dailyVisitors } = params;
-  
+
   try {
     const days = estimateRunTimeDays(
       BCR,
@@ -115,31 +115,31 @@ async function calculateRuntime(
   } catch (error) {
     if (error instanceof CalculationError) {
       // Provide detailed error context for runtime calculations
-      if (error.code === 'INVALID_BCR') {
+      if (error.code === "INVALID_BCR") {
         throw new Error(
           `Invalid Baseline Conversion Rate: ${error.message} The BCR represents your current conversion rate as a decimal (e.g., 0.05 for 5%). Please check your analytics data and provide the correct conversion rate.`
         );
-      } else if (error.code === 'INVALID_MDE') {
+      } else if (error.code === "INVALID_MDE") {
         throw new Error(
           `Invalid Minimum Detectable Effect: ${error.message} The MDE represents the relative improvement you want to detect (e.g., 0.10 for a 10% improvement). Consider what meaningful business impact you want to measure.`
         );
-      } else if (error.code === 'INVALID_SIGNIFICANCE_LEVEL') {
+      } else if (error.code === "INVALID_SIGNIFICANCE_LEVEL") {
         throw new Error(
           `Invalid Statistical Significance Level: ${error.message} This determines how confident you want to be in your results. Common values are 90, 95, or 99. Higher values require longer tests.`
         );
-      } else if (error.code === 'INVALID_NUM_VARIATIONS') {
+      } else if (error.code === "INVALID_NUM_VARIATIONS") {
         throw new Error(
           `Invalid Number of Variations: ${error.message} For a simple A/B test, use 2 (control + one variation). For A/B/C testing, use 3, and so on.`
         );
-      } else if (error.code === 'INVALID_DAILY_VISITORS') {
+      } else if (error.code === "INVALID_DAILY_VISITORS") {
         throw new Error(
           `Invalid Daily Visitors: ${error.message} This should be the number of unique visitors per day who will see your experiment. Check your website analytics for accurate traffic numbers.`
         );
-      } else if (error.code === 'MDE_TOO_LARGE') {
+      } else if (error.code === "MDE_TOO_LARGE") {
         throw new Error(
           `Minimum Detectable Effect is too large: ${error.message} Your MDE would result in a negative conversion rate. Try reducing the MDE to a more realistic value, or verify your BCR is correct.`
         );
-      } else if (error.code === 'DURATION_TOO_LONG') {
+      } else if (error.code === "DURATION_TOO_LONG") {
         throw new Error(
           `Experiment duration too long: ${error.message} To reduce the duration, you can: 1) Increase the MDE (detect larger effects), 2) Lower the significance level (accept more uncertainty), or 3) Get more daily traffic to the test.`
         );
@@ -635,7 +635,7 @@ tool({
 tool({
   name: "create_experiment",
   description:
-    "Creates a new experiment in an Optimizely Web Experimentation project (demo purposes).",
+    "Creates a new experiment in an Optimizely Web Experimentation project. Either url_targeting or page_ids must be provided to specify where the experiment runs.",
   parameters: [
     {
       name: "projectId",
@@ -673,6 +673,20 @@ tool({
       type: ParameterType.String,
       description:
         'JSON string array of variation objects with name and weight properties (optional, e.g. \'[{"name":"Variation A","weight":50}]\')',
+      required: false,
+    },
+    {
+      name: "url_targeting",
+      type: ParameterType.String,
+      description:
+        'JSON string object with URL targeting configuration (e.g. \'{"edit_url":"https://example.com/page","activation_type":"immediate"}\') - Either this or page_ids is required',
+      required: false,
+    },
+    {
+      name: "page_ids",
+      type: ParameterType.String,
+      description:
+        'JSON string array of page IDs where the experiment should run (e.g. \'["12345", "67890"]\') - Either this or url_targeting is required',
       required: false,
     },
   ],

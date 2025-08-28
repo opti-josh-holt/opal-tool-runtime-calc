@@ -207,6 +207,15 @@ export interface CreateExperimentParams {
     name: string;
     weight?: number;
   }[];
+  // Either url_targeting or page_ids must be provided for web experiments
+  url_targeting?: {
+    activation_type?: string;
+    conditions?: string;
+    edit_url?: string;
+    key?: string;
+    page_id?: string;
+  };
+  page_ids?: string[];
 }
 
 // Formatted response types for readable output

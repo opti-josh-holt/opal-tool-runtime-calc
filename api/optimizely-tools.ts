@@ -855,6 +855,8 @@ export async function createExperiment(
   params: CreateExperimentParams & {
     audience_ids?: string;
     variations?: string;
+    url_targeting?: string;
+    page_ids?: string;
   }
 ): Promise<{
   success: boolean;
@@ -867,6 +869,8 @@ export async function createExperiment(
   // Parse JSON string parameters
   let audience_ids: number[] | undefined;
   let variations: { name: string; weight?: number }[] | undefined;
+  let url_targeting: any | undefined;
+  let page_ids: string[] | undefined;
 
   if (params.audience_ids) {
     try {
@@ -884,15 +888,38 @@ export async function createExperiment(
     }
   }
 
+  if (params.url_targeting) {
+    try {
+      url_targeting = JSON.parse(params.url_targeting);
+    } catch (error) {
+      throw new Error("Invalid url_targeting JSON format");
+    }
+  }
+
+  if (params.page_ids) {
+    try {
+      page_ids = JSON.parse(params.page_ids);
+    } catch (error) {
+      throw new Error("Invalid page_ids JSON format");
+    }
+  }
+
   if (!name || typeof name !== "string") {
     throw new Error("Experiment name is required and must be a string");
+  }
+
+  // Validate that either url_targeting or page_ids is provided
+  if (!url_targeting && !page_ids) {
+    throw new Error(
+      "Either url_targeting or page_ids must be provided for web experiments. Please specify where the experiment should run."
+    );
   }
 
   const client = getOptimizelyClient();
 
   try {
     // Prepare experiment data for API
-    const experimentData = {
+    const experimentData: any = {
       name,
       description:
         description ||
@@ -907,6 +934,15 @@ export async function createExperiment(
         { name: "Variation 1", weight: 50 },
       ],
     };
+
+    // Add targeting configuration - use the API's expected field name "url_targetting" (with double t)
+    if (url_targeting) {
+      experimentData.url_targetting = url_targeting;
+    }
+
+    if (page_ids) {
+      experimentData.page_ids = page_ids;
+    }
 
     const experiment = await client.createExperiment(projectId, experimentData);
 
