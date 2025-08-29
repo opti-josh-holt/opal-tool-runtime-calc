@@ -857,10 +857,12 @@ export async function createExperiment(
     variations?: string;
     url_targeting?: string;
     page_ids?: string;
+    metrics?: string;
   }
 ): Promise<{
   success: boolean;
   experiment: FormattedExperiment;
+  experiment_url: string;
   message: string;
 }> {
   const projectId = getProjectId(params);
@@ -871,6 +873,7 @@ export async function createExperiment(
   let variations: { name: string; weight?: number }[] | undefined;
   let url_targeting: any | undefined;
   let page_ids: string[] | undefined;
+  let metrics: any[] | undefined;
 
   if (params.audience_ids) {
     try {
@@ -901,6 +904,14 @@ export async function createExperiment(
       page_ids = JSON.parse(params.page_ids);
     } catch (error) {
       throw new Error("Invalid page_ids JSON format");
+    }
+  }
+
+  if (params.metrics) {
+    try {
+      metrics = JSON.parse(params.metrics);
+    } catch (error) {
+      throw new Error("Invalid metrics JSON format");
     }
   }
 
@@ -945,6 +956,10 @@ export async function createExperiment(
       experimentData.page_ids = page_ids;
     }
 
+    if (metrics) {
+      experimentData.metrics = metrics;
+    }
+
     const experiment = await client.createExperiment(projectId, experimentData);
 
     // Format the response using the same structure as getExperiment
@@ -976,10 +991,25 @@ export async function createExperiment(
       page_ids: experiment.page_ids || [],
     };
 
+    // Generate experiment link for Optimizely UI
+    const experimentLink = `https://app.optimizely.com/v2/projects/${projectId}/experiments/${experiment.id}`;
+
+    // Generate informative message about what was included
+    const audienceInfo =
+      audience_ids && audience_ids.length > 0
+        ? `targeting ${audience_ids.length} audience(s)`
+        : "targeting everyone";
+
+    const metricsInfo =
+      metrics && metrics.length > 0
+        ? `with ${metrics.length} metric(s) configured`
+        : "with no metrics (add metrics in Optimizely UI)";
+
     return {
       success: true,
       experiment: formattedExperiment,
-      message: `Experiment "${name}" created successfully with ID ${experiment.id}`,
+      experiment_url: experimentLink,
+      message: `Experiment "${name}" created successfully with ID ${experiment.id}, ${audienceInfo}, ${metricsInfo}. View in Optimizely: ${experimentLink}`,
     };
   } catch (error) {
     if (error instanceof OptimizelyClientError) {

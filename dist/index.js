@@ -559,6 +559,12 @@ async function generatePdf(params) {
             description: 'JSON string array of page IDs where the experiment should run (e.g. \'["12345", "67890"]\') - Either this or url_targeting is required',
             required: false,
         },
+        {
+            name: "metrics",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: 'JSON string array of metrics/events to track (e.g. \'[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]\')',
+            required: false,
+        },
     ],
 })(optimizely_tools_1.createExperiment);
 // Project Overview Tool - NEW comprehensive overview with rich insights

@@ -213,6 +213,14 @@ export interface CreateExperimentParams {
     value: string; // the URL or pattern to match
   }[];
   page_ids?: string[];
+  // Optional metrics to add to the experiment
+  metrics?: {
+    event_id: number;
+    aggregator?: string; // "unique", "total", etc.
+    field?: string; // for revenue metrics
+    scope?: string; // "visitor", "session"
+    winning_direction?: string; // "increasing", "decreasing"
+  }[];
 }
 
 // Formatted response types for readable output
