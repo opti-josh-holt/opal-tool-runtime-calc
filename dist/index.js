@@ -544,7 +544,7 @@ async function generatePdf(params) {
         {
             name: "variations",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string array of variation objects with name and weight properties (optional, e.g. \'[{"name":"Variation A","weight":50}]\')',
+            description: 'JSON string array of variation objects with name and weight properties. Weights should be percentages that add up to 100 (e.g. \'[{"name":"Control","weight":50},{"name":"Variation A","weight":50}]\')',
             required: false,
         },
         {

@@ -928,14 +928,15 @@ export async function createExperiment(
       audience_ids: audience_ids || [],
       variations: variations?.map((variation, index) => ({
         name: variation.name,
-        weight: variation.weight || 100 / (variations.length || 1),
+        // Convert percentage weights (0-100) to basis points (0-10000)
+        weight: (variation.weight || 100 / (variations.length || 1)) * 100,
       })) || [
-        { name: "Original", weight: 50 },
-        { name: "Variation 1", weight: 50 },
+        { name: "Original", weight: 5000 }, // 50% = 5000 basis points
+        { name: "Variation 1", weight: 5000 }, // 50% = 5000 basis points
       ],
     };
 
-    // Add targeting configuration - use the correct API field name "url_targeting" 
+    // Add targeting configuration - use the correct API field name "url_targeting"
     if (url_targeting) {
       experimentData.url_targeting = url_targeting;
     }
