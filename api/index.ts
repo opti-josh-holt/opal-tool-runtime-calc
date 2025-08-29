@@ -679,7 +679,7 @@ tool({
       name: "url_targeting",
       type: ParameterType.String,
       description:
-        'JSON string object with URL targeting configuration (e.g. \'{"edit_url":"https://example.com/page","activation_type":"immediate"}\') - Either this or page_ids is required',
+        'JSON string array with URL targeting configuration (e.g. \'[{"match_type":"substring","value":"example.com"}]\') - Either this or page_ids is required',
       required: false,
     },
     {

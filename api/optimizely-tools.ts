@@ -935,9 +935,9 @@ export async function createExperiment(
       ],
     };
 
-    // Add targeting configuration - use the API's expected field name "url_targetting" (with double t)
+    // Add targeting configuration - use the correct API field name "url_targeting" 
     if (url_targeting) {
-      experimentData.url_targetting = url_targeting;
+      experimentData.url_targeting = url_targeting;
     }
 
     if (page_ids) {

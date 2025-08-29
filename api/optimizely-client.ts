@@ -198,6 +198,7 @@ export class OptimizelyClient {
       ...experimentData,
       project_id: parseInt(projectId),
     };
+    
     return this.makeRequest<OptimizelyExperiment>(
       "POST",
       `/experiments`,
