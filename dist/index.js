@@ -76,7 +76,24 @@ async function generatePdf(params) {
 }
 (0, opal_tools_sdk_1.tool)({
     name: "calculate_experiment_runtime",
-    description: "Calculates the estimated time to run an experiment.",
+    description: `🧮 EXPERIMENT DURATION CALCULATOR - Statistical power analysis for A/B tests
+
+📊 CALCULATES: Days needed to reach statistical significance based on your traffic and effect size
+
+⚡ KEY INPUTS:
+• BCR: Current conversion rate (0.05 = 5%)
+• MDE: Minimum detectable effect (0.10 = 10% improvement)
+• Significance: Confidence level (95 = 95% confidence)
+• Variations: Total including control (2 = A/B test)
+• Daily visitors: Actual test participants per day
+
+💡 BEST PRACTICES:
+• Use realistic baseline conversion rates from analytics
+• Start with 10-20% MDE for meaningful business impact
+• Higher significance = longer tests but more reliable results
+• Account for weekday/weekend traffic variations
+
+⚠️ VALIDATION: Provides detailed error messages for invalid inputs with guidance on fixing parameter issues`,
     parameters: [
         {
             name: "BCR",
@@ -112,7 +129,23 @@ async function generatePdf(params) {
 })(calculateRuntime);
 (0, opal_tools_sdk_1.tool)({
     name: "generate_pdf_from_markdown",
-    description: "Converts markdown text to a PDF document and returns a download URL.",
+    description: `📄 MARKDOWN TO PDF CONVERTER - Generate professional PDFs from markdown content
+
+✨ FEATURES:
+• Full markdown support (headers, lists, tables, code blocks)
+• Professional styling with proper typography
+• Temporary download URLs (expires after 24 hours)
+• Custom filename support
+
+📝 SUPPORTED MARKDOWN:
+• Headers (# ## ###), emphasis (*italic* **bold**)
+• Lists (ordered/unordered), tables, code blocks
+• Links and basic formatting
+
+💡 USAGE TIPS:
+• Great for reports, documentation, experiment summaries
+• Files auto-cleanup after expiration
+• Use descriptive filenames for better organization`,
     parameters: [
         {
             name: "markdown",
@@ -130,7 +163,22 @@ async function generatePdf(params) {
 })(generatePdf);
 (0, opal_tools_sdk_1.tool)({
     name: "read_jira_issue",
-    description: "Reads a Jira issue by its key and returns the issue details.",
+    description: `🎫 JIRA ISSUE READER - Fetch complete issue details and metadata
+
+📋 RETURNS:
+• Core fields (summary, description, status, assignee)
+• Project and issue type information
+• Creation/update timestamps
+• Custom fields and labels
+
+🔍 INPUT FORMAT:
+• Issue key: "PROJ-123" (project key + number)
+• Case-sensitive project keys
+
+💡 COMMON USE CASES:
+• Status checking before updates
+• Gathering context for related work
+• Audit trail investigation`,
     parameters: [
         {
             name: "issueKey",
@@ -142,7 +190,21 @@ async function generatePdf(params) {
 })(jira_tools_1.readJiraIssue);
 (0, opal_tools_sdk_1.tool)({
     name: "update_jira_issue",
-    description: "Updates a Jira issue with new field values.",
+    description: `✏️ JIRA ISSUE UPDATER - Modify issue fields with validation
+
+🔧 UPDATE FIELDS:
+• summary: Issue title/summary
+• description: Issue description (supports Jira markup)
+• assignee: Username (must be valid Jira user)
+• status: Status transitions (depends on workflow)
+• Custom fields: Use exact field names
+
+⚠️ FIELD FORMAT:
+• Provide as object: {summary: "New title", description: "Details"}
+• Status changes may require workflow permissions
+• Invalid field names will be rejected
+
+💡 TIP: Use read_jira_issue first to see current values and valid field names`,
     parameters: [
         {
             name: "issueKey",
@@ -160,7 +222,24 @@ async function generatePdf(params) {
 })(jira_tools_1.updateJiraIssue);
 (0, opal_tools_sdk_1.tool)({
     name: "create_jira_issue",
-    description: "Creates a new Jira issue in the specified project.",
+    description: `➕ JIRA ISSUE CREATOR - Create new issues with proper field validation
+
+🎯 REQUIRED FIELDS:
+• project: Project key (e.g., "PROJ")
+• issueType: "Bug", "Task", "Story", "Epic" (project-dependent)
+• summary: Clear, descriptive title
+
+🔧 OPTIONAL FIELDS:
+• description: Detailed issue description
+• assignee: Valid Jira username
+• additionalFields: Custom fields as key-value pairs
+
+⚠️ VALIDATION:
+• Project must exist and be accessible
+• Issue types vary by project configuration
+• User permissions required for assignment
+
+💡 WORKFLOW: Creates → Returns issue key for further operations`,
     parameters: [
         {
             name: "project",
@@ -202,7 +281,23 @@ async function generatePdf(params) {
 })(jira_tools_1.createJiraIssue);
 (0, opal_tools_sdk_1.tool)({
     name: "read_confluence_page",
-    description: "Reads a Confluence page by ID or by space and title.",
+    description: `📖 CONFLUENCE PAGE READER - Fetch page content and metadata
+
+🔍 LOOKUP METHODS:
+• By ID: Direct page ID (most reliable)
+• By space + title: Space key + exact page title
+
+📄 RETURNS:
+• Page content (storage format and view format)
+• Metadata (title, space, version, timestamps)
+• Author information and page hierarchy
+
+⚠️ ACCESS REQUIREMENTS:
+• Read permissions on space/page required
+• Exact title matching for space+title lookup
+• Archived pages may not be accessible
+
+💡 TIP: Use page ID when possible for consistent results`,
     parameters: [
         {
             name: "pageId",
@@ -226,7 +321,24 @@ async function generatePdf(params) {
 })(confluence_tools_1.readConfluencePage);
 (0, opal_tools_sdk_1.tool)({
     name: "update_confluence_page",
-    description: "Updates a Confluence page with new content.",
+    description: `✏️ CONFLUENCE PAGE UPDATER - Modify page content with version control
+
+🔧 UPDATE OPTIONS:
+• title: Change page title
+• content: Full page content (storage format)
+• Automatic version incrementing
+
+⚠️ CONTENT FORMAT:
+• Use Confluence storage format (XHTML-based)
+• Invalid markup will be rejected
+• Updates create new page versions
+
+💡 WORKFLOW:
+1. Read current page to get latest version
+2. Modify content as needed
+3. Update preserves edit history
+
+🔒 PERMISSIONS: Edit access required on page/space`,
     parameters: [
         {
             name: "pageId",
@@ -250,7 +362,26 @@ async function generatePdf(params) {
 })(confluence_tools_1.updateConfluencePage);
 (0, opal_tools_sdk_1.tool)({
     name: "create_confluence_page",
-    description: "Creates a new Confluence page in the specified space.",
+    description: `➕ CONFLUENCE PAGE CREATOR - Create new pages with proper hierarchy
+
+🎯 REQUIRED FIELDS:
+• spaceKey: Target space (e.g., "TEAM", "DOCS")
+• title: Unique page title within space
+• content: Page content in storage format
+
+🏗️ STRUCTURE OPTIONS:
+• parentPageId: Create as child page (optional)
+• Root level: Omit parentPageId for top-level pages
+
+⚠️ VALIDATION:
+• Space must exist and be accessible
+• Page titles must be unique within space
+• Create permissions required
+
+💡 BEST PRACTICES:
+• Use descriptive, searchable titles
+• Consider page hierarchy for organization
+• Include proper content structure from start`,
     parameters: [
         {
             name: "spaceKey",
@@ -509,7 +640,30 @@ async function generatePdf(params) {
 })(optimizely_tools_1.getEvent);
 (0, opal_tools_sdk_1.tool)({
     name: "create_experiment",
-    description: "Creates a new experiment in an Optimizely Web Experimentation project. Either url_targeting or page_ids must be provided to specify where the experiment runs.",
+    description: `🧪 OPTIMIZELY EXPERIMENT CREATOR - Create new Web Experimentation experiments with proper targeting
+
+⚡ REQUIRED SETUP:
+• Either url_targeting OR page_ids must be provided
+• Default variations created if not specified (Control 50%, Treatment 50%)
+• Metrics can be added later or during creation
+
+🎯 URL TARGETING FORMAT (OBJECT, not array):
+• Single object: '{"match_type":"exact","value":"https://example.com/page"}'  
+• Match types: "exact", "substring", "regex"
+
+📊 METRICS FORMAT (event_id as INTEGER):
+• '[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]'
+• event_id MUST be numeric (not string)
+
+👥 AUDIENCE IDS (array of integers):
+• '[12345,67890]' - numeric IDs only
+
+⚠️ COMMON ERRORS TO AVOID:
+• Don't wrap url_targeting in array brackets
+• event_id must be integer, not "12345" (string)
+• audience_ids as numbers: [123,456] not ["123","456"]
+
+💡 WORKFLOW: Create → Returns experiment ID → Add variations/metrics if needed`,
     parameters: [
         {
             name: "projectId",
@@ -538,7 +692,7 @@ async function generatePdf(params) {
         {
             name: "audience_ids",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: "JSON string array of audience IDs to target (optional, e.g. '[123, 456]')",
+            description: 'JSON string array of numeric audience IDs: "[12345,67890]" (integers, not strings)',
             required: false,
         },
         {
@@ -550,7 +704,7 @@ async function generatePdf(params) {
         {
             name: "url_targeting",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string array with URL targeting configuration (e.g. \'[{"match_type":"substring","value":"example.com"}]\') - Either this or page_ids is required',
+            description: 'JSON string OBJECT (not array) with URL targeting: \'{"match_type":"exact","value":"https://example.com"}\' - Either this or page_ids required',
             required: false,
         },
         {
@@ -562,7 +716,7 @@ async function generatePdf(params) {
         {
             name: "metrics",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string array of metrics/events to track (e.g. \'[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]\')',
+            description: 'JSON array: \'[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]\' (event_id as INTEGER)',
             required: false,
         },
     ],

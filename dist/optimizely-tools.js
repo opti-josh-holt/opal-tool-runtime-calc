@@ -723,10 +723,10 @@ async function createExperiment(params) {
         // Generate informative message about what was included
         const audienceInfo = audience_ids && audience_ids.length > 0
             ? `targeting ${audience_ids.length} audience(s)`
-            : 'targeting everyone';
+            : "targeting everyone";
         const metricsInfo = metrics && metrics.length > 0
             ? `with ${metrics.length} metric(s) configured`
-            : 'with no metrics (add metrics in Optimizely UI)';
+            : "with no metrics (add metrics in Optimizely UI)";
         return {
             success: true,
             experiment: formattedExperiment,
