@@ -853,11 +853,11 @@ export async function getExperimentResults(
  */
 export async function createExperiment(
   params: CreateExperimentParams & {
-    audience_conditions?: string;
-    variations?: string;
-    url_targeting?: string;
-    page_ids?: string;
-    metrics?: string;
+    audience_conditions?: string | any;
+    variations?: any;
+    url_targeting?: any;
+    page_ids?: any;
+    metrics?: any;
     holdback?: number;
   }
 ): Promise<{
@@ -869,61 +869,97 @@ export async function createExperiment(
   const projectId = getProjectId(params);
   const { name, description, holdback } = params;
 
-  // Parse JSON string parameters
+  // Handle parameters that can be either objects (new) or JSON strings (legacy)
   let audience_conditions: any | undefined;
   let variations: { name: string; weight?: number }[] | undefined;
   let url_targeting: any | undefined;
-  let page_ids: string[] | undefined;
+  let page_ids: number[] | undefined;
   let metrics: any[] | undefined;
 
+  // Handle audience_conditions
   if (params.audience_conditions) {
-    try {
-      audience_conditions = JSON.parse(params.audience_conditions);
-    } catch (error) {
-      throw new Error("Invalid audience_conditions JSON format");
-    }
-  }
-
-  if (params.variations) {
-    try {
-      variations = JSON.parse(params.variations);
-    } catch (error) {
-      throw new Error("Invalid variations JSON format");
-    }
-  }
-
-  if (params.url_targeting) {
-    try {
-      url_targeting = JSON.parse(params.url_targeting);
-      // If url_targeting has conditions as a string, parse it to JSON
-      if (
-        url_targeting.conditions &&
-        typeof url_targeting.conditions === "string"
-      ) {
+    if (typeof params.audience_conditions === "string") {
+      // Legacy JSON string format or simple "everyone"
+      if (params.audience_conditions === "everyone") {
+        audience_conditions = "everyone";
+      } else {
         try {
-          url_targeting.conditions = JSON.parse(url_targeting.conditions);
-        } catch (condError) {
-          throw new Error("Invalid url_targeting.conditions JSON format");
+          audience_conditions = JSON.parse(params.audience_conditions);
+        } catch (error) {
+          throw new Error("Invalid audience_conditions JSON format");
         }
       }
-    } catch (error) {
-      throw new Error("Invalid url_targeting JSON format");
+    } else {
+      // New object format
+      audience_conditions = params.audience_conditions;
     }
   }
 
+  // Handle variations
+  if (params.variations) {
+    if (typeof params.variations === "string") {
+      // Legacy JSON string format
+      try {
+        variations = JSON.parse(params.variations);
+      } catch (error) {
+        throw new Error("Invalid variations JSON format");
+      }
+    } else {
+      // New object format
+      variations = params.variations;
+    }
+  }
+
+  // Handle url_targeting
+  if (params.url_targeting) {
+    if (typeof params.url_targeting === "string") {
+      // Legacy JSON string format
+      try {
+        url_targeting = JSON.parse(params.url_targeting);
+      } catch (error) {
+        throw new Error("Invalid url_targeting JSON format");
+      }
+    } else {
+      // New object format
+      url_targeting = params.url_targeting;
+    }
+
+    // Ensure conditions is a JSON string for the API
+    if (
+      url_targeting.conditions &&
+      typeof url_targeting.conditions !== "string"
+    ) {
+      url_targeting.conditions = JSON.stringify(url_targeting.conditions);
+    }
+  }
+
+  // Handle page_ids
   if (params.page_ids) {
-    try {
-      page_ids = JSON.parse(params.page_ids);
-    } catch (error) {
-      throw new Error("Invalid page_ids JSON format");
+    if (typeof params.page_ids === "string") {
+      // Legacy JSON string format
+      try {
+        page_ids = JSON.parse(params.page_ids);
+      } catch (error) {
+        throw new Error("Invalid page_ids JSON format");
+      }
+    } else {
+      // New object format
+      page_ids = params.page_ids;
     }
   }
 
+  // Handle metrics
   if (params.metrics) {
-    try {
-      metrics = JSON.parse(params.metrics);
-    } catch (error) {
-      throw new Error("Invalid metrics JSON format");
+    if (typeof params.metrics === "string") {
+      // Legacy JSON string format
+      try {
+        metrics = JSON.parse(params.metrics);
+      } catch (error) {
+        throw new Error("Invalid metrics JSON format");
+      }
+    } else {
+      // New object format
+      metrics = params.metrics;
     }
   }
 
@@ -969,7 +1005,10 @@ export async function createExperiment(
     }
 
     if (page_ids) {
-      experimentData.page_ids = page_ids;
+      // Ensure page_ids are integers (convert strings if needed for backward compatibility)
+      experimentData.page_ids = page_ids.map((id: any) =>
+        typeof id === "string" ? parseInt(id, 10) : id
+      );
     }
 
     if (metrics) {

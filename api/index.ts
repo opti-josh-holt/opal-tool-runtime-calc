@@ -768,23 +768,20 @@ tool({
 
 ⚡ REQUIRED SETUP:
 • Either url_targeting OR page_ids must be provided
-• url_targeting REQUIRES edit_url field (the actual URL to target) unless page_ids are being used. 
+• url_targeting requires edit_url field (the actual URL to target)
 • project_id is always required
 
-🎯 URL TARGETING FORMAT (OBJECT with REQUIRED edit_url):
-• '{"edit_url":"https://example.com/page","conditions":"[\"and\", {\"type\": \"url\", \"match_type\": \"exact\", \"value\": \"https://example.com\"}]"}'
-• page_ids must be JSON string array of page IDs as INTEGERS where the experiment should run (e.g. '[12345, 67890]')
-• edit_url: REQUIRED - The actual URL to target unless page_ids are being used.
-• conditions: URL matching logic (JSON string)
+🎯 URL TARGETING FORMAT (Object):
+• url_targeting: {edit_url: "https://example.com", conditions: ["and", {type: "url", match_type: "exact", value: "https://example.com"}]}
+• page_ids: Array of page IDs as integers [12345, 67890]
 
-📊 METRICS FORMAT (event_id as INTEGER):
-• '[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]'
+📊 METRICS FORMAT (Array of objects):
+• metrics: [{event_id: 12345, aggregator: "unique", scope: "visitor", winning_direction: "increasing"}]
 • event_id MUST be numeric (not string)
-• metrics must be JSON string array, not object array
 
-👥 AUDIENCE CONDITIONS :
-• Use audience_conditions: '"everyone"' or '["and", {"audience_id": 7000}]'
-• Use audience_conditions instead of audience_ids
+👥 AUDIENCE CONDITIONS:
+• audience_conditions: "everyone" for all visitors
+• audience_conditions: ["and", {audience_id: 7000}] for custom targeting
 
 🚦 TRAFFIC CONTROL:
 • holdback: Traffic to exclude (basis points, 100 = 1%)
@@ -792,13 +789,13 @@ tool({
 
 💡 EXAMPLE TOOL CALL:
 {
-"tool": "create_experiment",
-"args": {
-  "projectId": "[[project_id]]",
-  "name": "[[concise title]]",
-  "description": "Hypothesis: ..."
-  "page_ids": "[12345]"
-}
+  "projectId": "5081939044990976",
+  "name": "My Test Experiment", 
+  "url_targeting": {
+    "edit_url": "https://example.com",
+    "conditions": ["and", {"type": "url", "match_type": "exact", "value": "https://example.com"}]
+  },
+  "variations": [{"name": "Control", "weight": 50}, {"name": "Treatment", "weight": 50}]
 }
   `,
   parameters: [
@@ -831,35 +828,35 @@ tool({
       name: "audience_conditions",
       type: ParameterType.String,
       description:
-        'Audience targeting: "everyone" or complex conditions like "["and", {"audience_id": 7000}]"',
+        'Audience targeting: "everyone" for all visitors, or provide complex conditions as a string like "["and", {"audience_id": 7000}]"',
       required: false,
     },
     {
       name: "variations",
-      type: ParameterType.String,
+      type: ParameterType.Dictionary,
       description:
-        'JSON string array of variation objects with name and weight properties. Weights should be percentages that add up to 100 (e.g. \'[{"name":"Control","weight":50},{"name":"Variation A","weight":50}]\')',
+        'Array of variation objects with name and weight properties. Weights should be percentages that add up to 100 (e.g. [{"name":"Control","weight":50},{"name":"Treatment","weight":50}])',
       required: false,
     },
     {
       name: "url_targeting",
-      type: ParameterType.String,
+      type: ParameterType.Dictionary,
       description:
-        'JSON OBJECT with REQUIRED edit_url: \'{"edit_url":"https://example.com","conditions":"[\\"and\\", {\\"type\\": \\"url\\", \\"match_type\\": \\"exact\\", \\"value\\": \\"https://example.com\\"}]"}\' - Either this or page_ids required',
+        'Object with REQUIRED edit_url: {"edit_url":"https://example.com","conditions":["and", {"type": "url", "match_type": "exact", "value": "https://example.com"}]} - Either this or page_ids required',
       required: false,
     },
     {
       name: "page_ids",
-      type: ParameterType.String,
+      type: ParameterType.Dictionary,
       description:
-        "JSON string array of page IDs as INTEGERS where the experiment should run (e.g. '[12345, 67890]') - Either this or url_targeting is required",
+        "Array of page IDs as integers where the experiment should run (e.g. [12345, 67890]) - Either this or url_targeting is required",
       required: false,
     },
     {
       name: "metrics",
-      type: ParameterType.String,
+      type: ParameterType.Dictionary,
       description:
-        'JSON array: \'[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]\' (event_id as INTEGER)',
+        'Array of metric objects: [{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}] (event_id as INTEGER)',
       required: false,
     },
   ],
