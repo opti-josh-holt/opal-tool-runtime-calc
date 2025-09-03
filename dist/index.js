@@ -716,7 +716,7 @@ async function generatePdf(params) {
         {
             name: "page_ids",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string array of page IDs where the experiment should run (e.g. \'["12345", "67890"]\') - Either this or url_targeting is required',
+            description: 'JSON string array of page IDs as INTEGERS where the experiment should run (e.g. \'[12345, 67890]\') - Either this or url_targeting is required',
             required: false,
         },
         {

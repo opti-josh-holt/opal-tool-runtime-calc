@@ -844,7 +844,7 @@ tool({
       name: "page_ids",
       type: ParameterType.String,
       description:
-        'JSON string array of page IDs where the experiment should run (e.g. \'["12345", "67890"]\') - Either this or url_targeting is required',
+        'JSON string array of page IDs as INTEGERS where the experiment should run (e.g. \'[12345, 67890]\') - Either this or url_targeting is required',
       required: false,
     },
     {
