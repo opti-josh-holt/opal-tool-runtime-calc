@@ -1074,6 +1074,10 @@ export async function createExperiment(
       "DEBUG: Sending experiment data to API:",
       JSON.stringify(experimentData, null, 2)
     );
+
+    // Try a minimal payload first to test API connectivity
+    console.log("DEBUG: Attempting to create experiment with full payload...");
+
     const experiment = await client.createExperiment(projectId, experimentData);
 
     // Format the response using the same structure as getExperiment
@@ -1134,6 +1138,47 @@ export async function createExperiment(
         error instanceof Error ? error.message : "Unknown error"
       }`
     );
+  }
+}
+
+/**
+ * Test function to create a minimal experiment - for debugging API issues
+ */
+export async function createMinimalExperiment(projectId: string): Promise<any> {
+  const client = getOptimizelyClient();
+
+  const minimalPayload = {
+    name: `Test Experiment ${Date.now()}`,
+    description: "Minimal test experiment for debugging",
+    audience_conditions: "everyone",
+    url_targeting: {
+      edit_url: "https://example.com",
+      conditions: JSON.stringify([
+        "and",
+        { type: "url", match_type: "exact", value: "https://example.com" },
+      ]),
+    },
+    variations: [
+      { name: "Control", weight: 5000 },
+      { name: "Treatment", weight: 5000 },
+    ],
+  };
+
+  console.log(
+    "DEBUG: Creating minimal test experiment with payload:",
+    JSON.stringify(minimalPayload, null, 2)
+  );
+
+  try {
+    const experiment = await client.createExperiment(projectId, minimalPayload);
+    console.log(
+      "DEBUG: Minimal experiment created successfully:",
+      experiment.id
+    );
+    return experiment;
+  } catch (error) {
+    console.log("DEBUG: Minimal experiment creation failed:", error);
+    throw error;
   }
 }
 

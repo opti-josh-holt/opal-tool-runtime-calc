@@ -36,6 +36,7 @@ import {
   getEvent,
   getExperimentResults,
   createExperiment,
+  createMinimalExperiment,
   getProjectOverview,
 } from "./optimizely-tools";
 import type {
@@ -861,6 +862,21 @@ tool({
     },
   ],
 })(createExperiment);
+
+// Minimal test experiment tool for debugging API issues
+tool({
+  name: "create_minimal_experiment",
+  description:
+    "DEBUG TOOL: Create a minimal test experiment to isolate API issues. Use only for troubleshooting when main create_experiment fails.",
+  parameters: [
+    {
+      name: "projectId",
+      type: ParameterType.String,
+      description: "The Optimizely project ID",
+      required: true,
+    },
+  ],
+})(createMinimalExperiment);
 
 // Project Overview Tool - NEW comprehensive overview with rich insights
 tool({

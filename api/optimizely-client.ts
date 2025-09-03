@@ -90,9 +90,21 @@ export class OptimizelyClient {
 
   private handleApiError(error: any): OptimizelyClientError {
     if (error.response) {
-      const { status, data } = error.response;
+      const { status, data, statusText, headers } = error.response;
       const message = (data as any)?.message || `HTTP ${status} error`;
       const code = (data as any)?.code || `HTTP_${status}`;
+
+      // Enhanced logging for debugging
+      console.log("DEBUG: Optimizely API Error Details:", {
+        status,
+        statusText,
+        data: JSON.stringify(data, null, 2),
+        headers: {
+          "x-request-id": headers["x-request-id"],
+          "content-type": headers["content-type"],
+          server: headers["server"],
+        },
+      });
 
       return new OptimizelyClientError(
         `Optimizely API Error: ${message}`,
@@ -101,6 +113,12 @@ export class OptimizelyClient {
         data
       );
     } else if (error.request) {
+      console.log("DEBUG: Network error details:", {
+        message: error.message,
+        code: error.code,
+        errno: error.errno,
+        syscall: error.syscall,
+      });
       return new OptimizelyClientError(
         "Network error: Unable to reach Optimizely API",
         undefined,
@@ -108,6 +126,7 @@ export class OptimizelyClient {
         error.message
       );
     } else {
+      console.log("DEBUG: Request setup error:", error.message);
       return new OptimizelyClientError(
         `Request error: ${error.message}`,
         undefined,

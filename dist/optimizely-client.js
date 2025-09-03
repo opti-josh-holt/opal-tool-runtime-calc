@@ -68,15 +68,33 @@ class OptimizelyClient {
     }
     handleApiError(error) {
         if (error.response) {
-            const { status, data } = error.response;
+            const { status, data, statusText, headers } = error.response;
             const message = data?.message || `HTTP ${status} error`;
             const code = data?.code || `HTTP_${status}`;
+            // Enhanced logging for debugging
+            console.log('DEBUG: Optimizely API Error Details:', {
+                status,
+                statusText,
+                data: JSON.stringify(data, null, 2),
+                headers: {
+                    'x-request-id': headers['x-request-id'],
+                    'content-type': headers['content-type'],
+                    'server': headers['server']
+                }
+            });
             return new OptimizelyClientError(`Optimizely API Error: ${message}`, status, code, data);
         }
         else if (error.request) {
+            console.log('DEBUG: Network error details:', {
+                message: error.message,
+                code: error.code,
+                errno: error.errno,
+                syscall: error.syscall
+            });
             return new OptimizelyClientError("Network error: Unable to reach Optimizely API", undefined, "NETWORK_ERROR", error.message);
         }
         else {
+            console.log('DEBUG: Request setup error:', error.message);
             return new OptimizelyClientError(`Request error: ${error.message}`, undefined, "REQUEST_ERROR", error.message);
         }
     }
@@ -134,7 +152,7 @@ class OptimizelyClient {
             ...experimentData,
             project_id: parseInt(projectId, 10), // Ensure base 10 parsing
         };
-        console.log('DEBUG: Final payload with project_id:', JSON.stringify(dataWithProjectId, null, 2));
+        console.log("DEBUG: Final payload with project_id:", JSON.stringify(dataWithProjectId, null, 2));
         return this.makeRequest("POST", `/experiments`, dataWithProjectId);
     }
     async getExperimentResults(projectId, experimentId) {

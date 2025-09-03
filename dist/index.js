@@ -731,6 +731,19 @@ async function generatePdf(params) {
         },
     ],
 })(optimizely_tools_1.createExperiment);
+// Minimal test experiment tool for debugging API issues
+(0, opal_tools_sdk_1.tool)({
+    name: "create_minimal_experiment",
+    description: "DEBUG TOOL: Create a minimal test experiment to isolate API issues. Use only for troubleshooting when main create_experiment fails.",
+    parameters: [
+        {
+            name: "projectId",
+            type: opal_tools_sdk_1.ParameterType.String,
+            description: "The Optimizely project ID",
+            required: true,
+        },
+    ],
+})(optimizely_tools_1.createMinimalExperiment);
 // Project Overview Tool - NEW comprehensive overview with rich insights
 (0, opal_tools_sdk_1.tool)({
     name: "get_project_overview",
