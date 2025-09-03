@@ -616,11 +616,15 @@ export async function listEvents(
   const client = getOptimizelyClient();
 
   try {
+    console.log(`DEBUG: listEvents called with params:`, params);
+    
     const events = await client.listEvents(projectId, {
       page: params.page,
       per_page: params.per_page || 50,
       // Removed include_classic parameter to match API format
     });
+
+    console.log(`DEBUG: Raw events from API (${events.length} total):`, JSON.stringify(events, null, 2));
 
     // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
     const filteredEvents =
@@ -630,7 +634,9 @@ export async function listEvents(
         ? events
         : events.filter((event) => !event.archived);
 
-    return {
+    console.log(`DEBUG: Filtered events (${filteredEvents.length} after filtering):`, JSON.stringify(filteredEvents, null, 2));
+
+    const result = {
       project_id: projectId,
       total_count: filteredEvents.length,
       events: filteredEvents.map((event) => ({
@@ -643,6 +649,10 @@ export async function listEvents(
         event_type: event.event_type,
       })),
     };
+
+    console.log(`DEBUG: Final formatted result:`, JSON.stringify(result, null, 2));
+
+    return result;
   } catch (error) {
     if (error instanceof OptimizelyClientError) {
       // Provide more specific error messages based on status code
