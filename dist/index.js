@@ -644,24 +644,30 @@ async function generatePdf(params) {
 
 ⚡ REQUIRED SETUP:
 • Either url_targeting OR page_ids must be provided
-• Default variations created if not specified (Control 50%, Treatment 50%)
-• Metrics can be added later or during creation
+• url_targeting REQUIRES edit_url field (the actual URL to target)
+• project_id is always required
 
-🎯 URL TARGETING FORMAT (OBJECT, not array):
-• Single object: '{"match_type":"exact","value":"https://example.com/page"}'  
-• Match types: "exact", "substring", "regex"
+🎯 URL TARGETING FORMAT (OBJECT with REQUIRED edit_url):
+• '{"edit_url":"https://example.com/page","conditions":"[\"and\", {\"type\": \"url\", \"match_type\": \"exact\", \"value\": \"https://example.com\"}]"}'
+• edit_url: REQUIRED - The actual URL to target
+• conditions: URL matching logic (JSON string)
 
 📊 METRICS FORMAT (event_id as INTEGER):
 • '[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]'
 • event_id MUST be numeric (not string)
 
-👥 AUDIENCE IDS (array of integers):
-• '[12345,67890]' - numeric IDs only
+👥 AUDIENCE CONDITIONS (not audience_ids):
+• Use audience_conditions: '"everyone"' or '["and", {"audience_id": 7000}]'
 
-⚠️ COMMON ERRORS TO AVOID:
-• Don't wrap url_targeting in array brackets
-• event_id must be integer, not "12345" (string)
-• audience_ids as numbers: [123,456] not ["123","456"]
+🚦 TRAFFIC CONTROL:
+• holdback: Traffic to exclude (basis points, 100 = 1%)
+• Example: holdback: 1000 means 10% excluded, 90% in experiment
+
+⚠️ CRITICAL FIXES FROM SWAGGER:
+• url_targeting MUST include edit_url (required field)
+• Use audience_conditions instead of audience_ids
+• Use holdback instead of percentage_included
+• metrics must be JSON string array, not object array
 
 💡 WORKFLOW: Create → Returns experiment ID → Add variations/metrics if needed`,
     parameters: [
@@ -684,15 +690,15 @@ async function generatePdf(params) {
             required: false,
         },
         {
-            name: "percentage_included",
+            name: "holdback",
             type: opal_tools_sdk_1.ParameterType.Number,
-            description: "Percentage of traffic to include (1-100, default: 100)",
+            description: "Traffic to exclude in basis points (100 = 1%). Example: 1000 = 10% excluded",
             required: false,
         },
         {
-            name: "audience_ids",
+            name: "audience_conditions",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string array of numeric audience IDs: "[12345,67890]" (integers, not strings)',
+            description: 'Audience targeting: "everyone" or complex conditions like "[\"and\", {\"audience_id\": 7000}]"',
             required: false,
         },
         {
@@ -704,7 +710,7 @@ async function generatePdf(params) {
         {
             name: "url_targeting",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'JSON string OBJECT (not array) with URL targeting: \'{"match_type":"exact","value":"https://example.com"}\' - Either this or page_ids required',
+            description: 'JSON OBJECT with REQUIRED edit_url: \'{"edit_url":"https://example.com","conditions":"[\\"and\\", {\\"type\\": \\"url\\", \\"match_type\\": \\"exact\\", \\"value\\": \\"https://example.com\\"}]"}\' - Either this or page_ids required',
             required: false,
         },
         {
