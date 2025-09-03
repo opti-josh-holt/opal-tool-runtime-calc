@@ -768,32 +768,39 @@ tool({
 
 ⚡ REQUIRED SETUP:
 • Either url_targeting OR page_ids must be provided
-• url_targeting REQUIRES edit_url field (the actual URL to target)
+• url_targeting REQUIRES edit_url field (the actual URL to target) unless page_ids are being used. 
 • project_id is always required
 
 🎯 URL TARGETING FORMAT (OBJECT with REQUIRED edit_url):
 • '{"edit_url":"https://example.com/page","conditions":"[\"and\", {\"type\": \"url\", \"match_type\": \"exact\", \"value\": \"https://example.com\"}]"}'
-• edit_url: REQUIRED - The actual URL to target
+• page_ids must be JSON string array of page IDs as INTEGERS where the experiment should run (e.g. '[12345, 67890]')
+• edit_url: REQUIRED - The actual URL to target unless page_ids are being used.
 • conditions: URL matching logic (JSON string)
 
 📊 METRICS FORMAT (event_id as INTEGER):
 • '[{"event_id":12345,"aggregator":"unique","scope":"visitor","winning_direction":"increasing"}]'
 • event_id MUST be numeric (not string)
+• metrics must be JSON string array, not object array
 
-👥 AUDIENCE CONDITIONS (not audience_ids):
+👥 AUDIENCE CONDITIONS :
 • Use audience_conditions: '"everyone"' or '["and", {"audience_id": 7000}]'
+• Use audience_conditions instead of audience_ids
 
 🚦 TRAFFIC CONTROL:
 • holdback: Traffic to exclude (basis points, 100 = 1%)
 • Example: holdback: 1000 means 10% excluded, 90% in experiment
 
-⚠️ CRITICAL FIXES FROM SWAGGER:
-• url_targeting MUST include edit_url (required field)
-• Use audience_conditions instead of audience_ids
-• Use holdback instead of percentage_included
-• metrics must be JSON string array, not object array
-
-💡 WORKFLOW: Create → Returns experiment ID → Add variations/metrics if needed`,
+💡 EXAMPLE TOOL CALL:
+{
+"tool": "create_experiment",
+"args": {
+  "projectId": "[[project_id]]",
+  "name": "[[concise title]]",
+  "description": "Hypothesis: ..."
+  "page_ids": "[12345]"
+}
+}
+  `,
   parameters: [
     {
       name: "projectId",
@@ -816,14 +823,15 @@ tool({
     {
       name: "holdback",
       type: ParameterType.Number,
-      description: "Traffic to exclude in basis points (100 = 1%). Example: 1000 = 10% excluded",
+      description:
+        "Traffic to exclude in basis points (100 = 1%). Example: 1000 = 10% excluded",
       required: false,
     },
     {
       name: "audience_conditions",
       type: ParameterType.String,
       description:
-        'Audience targeting: "everyone" or complex conditions like "[\"and\", {\"audience_id\": 7000}]"',
+        'Audience targeting: "everyone" or complex conditions like "["and", {"audience_id": 7000}]"',
       required: false,
     },
     {
@@ -844,7 +852,7 @@ tool({
       name: "page_ids",
       type: ParameterType.String,
       description:
-        'JSON string array of page IDs as INTEGERS where the experiment should run (e.g. \'[12345, 67890]\') - Either this or url_targeting is required',
+        "JSON string array of page IDs as INTEGERS where the experiment should run (e.g. '[12345, 67890]') - Either this or url_targeting is required",
       required: false,
     },
     {
