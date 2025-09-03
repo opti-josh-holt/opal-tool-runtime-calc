@@ -200,12 +200,8 @@ async function listAudiences(params) {
             per_page: params.per_page || 50,
             // Removed include_classic parameter to match API format
         });
-        // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
-        const filteredAudiences = params.archived !== undefined
-            ? audiences.filter((aud) => aud.archived === params.archived)
-            : params.include_archived
-                ? audiences
-                : audiences.filter((aud) => !aud.archived);
+        // Always exclude archived audiences
+        const filteredAudiences = audiences.filter((aud) => !aud.archived);
         return {
             project_id: projectId,
             total_count: filteredAudiences.length,
@@ -317,12 +313,8 @@ async function listPages(params) {
             per_page: params.per_page || 50,
             // Removed include_classic parameter to match API format
         });
-        // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
-        const filteredPages = params.archived !== undefined
-            ? pages.filter((page) => page.archived === params.archived)
-            : params.include_archived
-                ? pages
-                : pages.filter((page) => !page.archived);
+        // Always exclude archived pages
+        const filteredPages = pages.filter((page) => !page.archived);
         return {
             project_id: projectId,
             total_count: filteredPages.length,
@@ -438,12 +430,8 @@ async function listEvents(params) {
             // Removed include_classic parameter to match API format
         });
         console.log(`DEBUG: Raw events from API (${events.length} total):`, JSON.stringify(events, null, 2));
-        // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
-        const filteredEvents = params.archived !== undefined
-            ? events.filter((event) => event.archived === params.archived)
-            : params.include_archived
-                ? events
-                : events.filter((event) => !event.archived);
+        // Always exclude archived events
+        const filteredEvents = events.filter((event) => !event.archived);
         console.log(`DEBUG: Filtered events (${filteredEvents.length} after filtering):`, JSON.stringify(filteredEvents, null, 2));
         const result = {
             project_id: projectId,
