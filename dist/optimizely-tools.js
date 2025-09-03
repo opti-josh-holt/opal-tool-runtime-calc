@@ -617,10 +617,10 @@ async function createExperiment(params) {
     let metrics;
     // Handle audience_conditions
     if (params.audience_conditions) {
-        if (typeof params.audience_conditions === 'string') {
+        if (typeof params.audience_conditions === "string") {
             // Legacy JSON string format or simple "everyone"
-            if (params.audience_conditions === 'everyone') {
-                audience_conditions = 'everyone';
+            if (params.audience_conditions === "everyone") {
+                audience_conditions = "everyone";
             }
             else {
                 try {
@@ -638,7 +638,7 @@ async function createExperiment(params) {
     }
     // Handle variations
     if (params.variations) {
-        if (typeof params.variations === 'string') {
+        if (typeof params.variations === "string") {
             // Legacy JSON string format
             try {
                 variations = JSON.parse(params.variations);
@@ -654,7 +654,7 @@ async function createExperiment(params) {
     }
     // Handle url_targeting
     if (params.url_targeting) {
-        if (typeof params.url_targeting === 'string') {
+        if (typeof params.url_targeting === "string") {
             // Legacy JSON string format
             try {
                 url_targeting = JSON.parse(params.url_targeting);
@@ -668,13 +668,16 @@ async function createExperiment(params) {
             url_targeting = params.url_targeting;
         }
         // Ensure conditions is a JSON string for the API
-        if (url_targeting.conditions && typeof url_targeting.conditions !== 'string') {
+        if (url_targeting.conditions &&
+            typeof url_targeting.conditions !== "string") {
+            console.log('DEBUG: Converting conditions from:', typeof url_targeting.conditions, url_targeting.conditions);
             url_targeting.conditions = JSON.stringify(url_targeting.conditions);
+            console.log('DEBUG: Converted conditions to:', typeof url_targeting.conditions, url_targeting.conditions);
         }
     }
     // Handle page_ids
     if (params.page_ids) {
-        if (typeof params.page_ids === 'string') {
+        if (typeof params.page_ids === "string") {
             // Legacy JSON string format
             try {
                 page_ids = JSON.parse(params.page_ids);
@@ -690,7 +693,7 @@ async function createExperiment(params) {
     }
     // Handle metrics
     if (params.metrics) {
-        if (typeof params.metrics === 'string') {
+        if (typeof params.metrics === "string") {
             // Legacy JSON string format
             try {
                 metrics = JSON.parse(params.metrics);
@@ -711,6 +714,37 @@ async function createExperiment(params) {
     if (!url_targeting && !page_ids) {
         throw new Error("Either url_targeting or page_ids must be provided for web experiments. Please specify where the experiment should run.");
     }
+    // Additional validation for url_targeting
+    if (url_targeting && !url_targeting.edit_url) {
+        throw new Error("url_targeting must include edit_url field");
+    }
+    // Validate variations weights sum to 100
+    if (variations && variations.length > 0) {
+        const totalWeight = variations.reduce((sum, v) => sum + (v.weight || 0), 0);
+        if (totalWeight !== 100) {
+            console.log(`DEBUG: Variation weights sum to ${totalWeight}, adjusting to equal distribution`);
+            // Auto-adjust weights to equal distribution
+            const equalWeight = 100 / variations.length;
+            variations = variations.map(v => ({ ...v, weight: equalWeight }));
+        }
+    }
+    // Validate metrics have required fields
+    if (metrics && metrics.length > 0) {
+        for (const metric of metrics) {
+            if (!metric.event_id || typeof metric.event_id !== 'number') {
+                throw new Error(`Invalid metric: event_id must be a number, got ${typeof metric.event_id}`);
+            }
+            if (!metric.aggregator) {
+                throw new Error(`Invalid metric: aggregator is required`);
+            }
+            if (!metric.scope) {
+                throw new Error(`Invalid metric: scope is required`);
+            }
+            if (!metric.winning_direction) {
+                throw new Error(`Invalid metric: winning_direction is required`);
+            }
+        }
+    }
     const client = (0, optimizely_client_1.getOptimizelyClient)();
     try {
         // Prepare experiment data for API
@@ -719,11 +753,15 @@ async function createExperiment(params) {
             description: description ||
                 `Experiment created via Opal on ${new Date().toLocaleDateString()}`,
             audience_conditions: audience_conditions || "everyone",
-            variations: variations?.map((variation, index) => ({
-                name: variation.name,
-                // Convert percentage weights (0-100) to basis points (0-10000)
-                weight: (variation.weight || 100 / (variations.length || 1)) * 100,
-            })) || [
+            variations: variations?.map((variation, index) => {
+                const percentageWeight = variation.weight || 100 / (variations.length || 1);
+                const basisPointWeight = percentageWeight * 100;
+                console.log(`DEBUG: Converting variation "${variation.name}" weight from ${percentageWeight}% to ${basisPointWeight} basis points`);
+                return {
+                    name: variation.name,
+                    weight: basisPointWeight,
+                };
+            }) || [
                 { name: "Original", weight: 5000 }, // 50% = 5000 basis points
                 { name: "Variation 1", weight: 5000 }, // 50% = 5000 basis points
             ],
@@ -738,11 +776,12 @@ async function createExperiment(params) {
         }
         if (page_ids) {
             // Ensure page_ids are integers (convert strings if needed for backward compatibility)
-            experimentData.page_ids = page_ids.map((id) => typeof id === 'string' ? parseInt(id, 10) : id);
+            experimentData.page_ids = page_ids.map((id) => typeof id === "string" ? parseInt(id, 10) : id);
         }
         if (metrics) {
             experimentData.metrics = metrics;
         }
+        console.log('DEBUG: Sending experiment data to API:', JSON.stringify(experimentData, null, 2));
         const experiment = await client.createExperiment(projectId, experimentData);
         // Format the response using the same structure as getExperiment
         const formattedExperiment = {

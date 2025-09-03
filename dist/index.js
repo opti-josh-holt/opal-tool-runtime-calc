@@ -702,7 +702,7 @@ async function generatePdf(params) {
         {
             name: "audience_conditions",
             type: opal_tools_sdk_1.ParameterType.String,
-            description: 'Audience targeting: "everyone" for all visitors, or provide complex conditions as a string like "[\"and\", {\"audience_id\": 7000}]"',
+            description: 'Audience targeting: "everyone" for all visitors, or provide complex conditions as a string like "["and", {"audience_id": 7000}]"',
             required: false,
         },
         {
