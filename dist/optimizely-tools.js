@@ -608,19 +608,19 @@ async function getExperimentResults(params) {
  */
 async function createExperiment(params) {
     const projectId = getProjectId(params);
-    const { name, description, percentage_included } = params;
+    const { name, description, holdback } = params;
     // Parse JSON string parameters
-    let audience_ids;
+    let audience_conditions;
     let variations;
     let url_targeting;
     let page_ids;
     let metrics;
-    if (params.audience_ids) {
+    if (params.audience_conditions) {
         try {
-            audience_ids = JSON.parse(params.audience_ids);
+            audience_conditions = JSON.parse(params.audience_conditions);
         }
         catch (error) {
-            throw new Error("Invalid audience_ids JSON format");
+            throw new Error("Invalid audience_conditions JSON format");
         }
     }
     if (params.variations) {
@@ -634,6 +634,15 @@ async function createExperiment(params) {
     if (params.url_targeting) {
         try {
             url_targeting = JSON.parse(params.url_targeting);
+            // If url_targeting has conditions as a string, parse it to JSON
+            if (url_targeting.conditions && typeof url_targeting.conditions === 'string') {
+                try {
+                    url_targeting.conditions = JSON.parse(url_targeting.conditions);
+                }
+                catch (condError) {
+                    throw new Error("Invalid url_targeting.conditions JSON format");
+                }
+            }
         }
         catch (error) {
             throw new Error("Invalid url_targeting JSON format");
@@ -669,8 +678,7 @@ async function createExperiment(params) {
             name,
             description: description ||
                 `Experiment created via Opal on ${new Date().toLocaleDateString()}`,
-            percentage_included: percentage_included || 100,
-            audience_ids: audience_ids || [],
+            audience_conditions: audience_conditions || "everyone",
             variations: variations?.map((variation, index) => ({
                 name: variation.name,
                 // Convert percentage weights (0-100) to basis points (0-10000)
@@ -680,6 +688,10 @@ async function createExperiment(params) {
                 { name: "Variation 1", weight: 5000 }, // 50% = 5000 basis points
             ],
         };
+        // Add holdback if provided
+        if (holdback !== undefined) {
+            experimentData.holdback = holdback;
+        }
         // Add targeting configuration - use the correct API field name "url_targeting"
         if (url_targeting) {
             experimentData.url_targeting = url_targeting;
@@ -721,8 +733,8 @@ async function createExperiment(params) {
         // Generate experiment link for Optimizely UI
         const experimentLink = `https://app.optimizely.com/v2/projects/${projectId}/experiments/${experiment.id}`;
         // Generate informative message about what was included
-        const audienceInfo = audience_ids && audience_ids.length > 0
-            ? `targeting ${audience_ids.length} audience(s)`
+        const audienceInfo = audience_conditions && audience_conditions !== "everyone"
+            ? `with custom audience conditions`
             : "targeting everyone";
         const metricsInfo = metrics && metrics.length > 0
             ? `with ${metrics.length} metric(s) configured`
