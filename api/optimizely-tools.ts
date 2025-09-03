@@ -1025,7 +1025,7 @@ export async function createExperiment(
   const client = getOptimizelyClient();
 
   try {
-    // Prepare experiment data for API
+    // Prepare experiment data for API - simplified payload based on API docs
     const experimentData: any = {
       name,
       description:

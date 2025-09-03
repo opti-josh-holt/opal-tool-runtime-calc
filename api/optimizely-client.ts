@@ -196,9 +196,13 @@ export class OptimizelyClient {
     // Add project_id to the experiment data
     const dataWithProjectId = {
       ...experimentData,
-      project_id: parseInt(projectId),
+      project_id: parseInt(projectId, 10), // Ensure base 10 parsing
     };
 
+    console.log(
+      "DEBUG: Final payload with project_id:",
+      JSON.stringify(dataWithProjectId, null, 2)
+    );
     return this.makeRequest<OptimizelyExperiment>(
       "POST",
       `/experiments`,

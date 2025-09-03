@@ -670,9 +670,9 @@ async function createExperiment(params) {
         // Ensure conditions is a JSON string for the API
         if (url_targeting.conditions &&
             typeof url_targeting.conditions !== "string") {
-            console.log('DEBUG: Converting conditions from:', typeof url_targeting.conditions, url_targeting.conditions);
+            console.log("DEBUG: Converting conditions from:", typeof url_targeting.conditions, url_targeting.conditions);
             url_targeting.conditions = JSON.stringify(url_targeting.conditions);
-            console.log('DEBUG: Converted conditions to:', typeof url_targeting.conditions, url_targeting.conditions);
+            console.log("DEBUG: Converted conditions to:", typeof url_targeting.conditions, url_targeting.conditions);
         }
     }
     // Handle page_ids
@@ -725,13 +725,13 @@ async function createExperiment(params) {
             console.log(`DEBUG: Variation weights sum to ${totalWeight}, adjusting to equal distribution`);
             // Auto-adjust weights to equal distribution
             const equalWeight = 100 / variations.length;
-            variations = variations.map(v => ({ ...v, weight: equalWeight }));
+            variations = variations.map((v) => ({ ...v, weight: equalWeight }));
         }
     }
     // Validate metrics have required fields
     if (metrics && metrics.length > 0) {
         for (const metric of metrics) {
-            if (!metric.event_id || typeof metric.event_id !== 'number') {
+            if (!metric.event_id || typeof metric.event_id !== "number") {
                 throw new Error(`Invalid metric: event_id must be a number, got ${typeof metric.event_id}`);
             }
             if (!metric.aggregator) {
@@ -747,7 +747,7 @@ async function createExperiment(params) {
     }
     const client = (0, optimizely_client_1.getOptimizelyClient)();
     try {
-        // Prepare experiment data for API
+        // Prepare experiment data for API - simplified payload based on API docs
         const experimentData = {
             name,
             description: description ||
@@ -781,7 +781,7 @@ async function createExperiment(params) {
         if (metrics) {
             experimentData.metrics = metrics;
         }
-        console.log('DEBUG: Sending experiment data to API:', JSON.stringify(experimentData, null, 2));
+        console.log("DEBUG: Sending experiment data to API:", JSON.stringify(experimentData, null, 2));
         const experiment = await client.createExperiment(projectId, experimentData);
         // Format the response using the same structure as getExperiment
         const formattedExperiment = {
