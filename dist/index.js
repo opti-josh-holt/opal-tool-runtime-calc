@@ -718,9 +718,8 @@ async function generatePdf(params) {
   "name": "[[concise title]]",
   "description": "Hypothesis: ..."
   "page_ids": "[12345]"
-    }
 }
-```
+}
 `,
   parameters: [
     {
