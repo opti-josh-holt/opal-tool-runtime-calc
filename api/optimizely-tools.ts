@@ -302,11 +302,13 @@ export async function listAudiences(
       // Removed include_classic parameter to match API format
     });
 
-    // Filter by archived status if specified
+    // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
     const filteredAudiences =
       params.archived !== undefined
         ? audiences.filter((aud) => aud.archived === params.archived)
-        : audiences;
+        : params.include_archived
+        ? audiences
+        : audiences.filter((aud) => !aud.archived);
 
     return {
       project_id: projectId,
@@ -461,11 +463,13 @@ export async function listPages(
       // Removed include_classic parameter to match API format
     });
 
-    // Filter by archived status if specified
+    // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
     const filteredPages =
       params.archived !== undefined
         ? pages.filter((page) => page.archived === params.archived)
-        : pages;
+        : params.include_archived
+        ? pages
+        : pages.filter((page) => !page.archived);
 
     return {
       project_id: projectId,
@@ -618,11 +622,13 @@ export async function listEvents(
       // Removed include_classic parameter to match API format
     });
 
-    // Filter by archived status if specified
+    // Filter by archived status - priority: archived param > include_archived param > default (exclude archived)
     const filteredEvents =
       params.archived !== undefined
         ? events.filter((event) => event.archived === params.archived)
-        : events;
+        : params.include_archived
+        ? events
+        : events.filter((event) => !event.archived);
 
     return {
       project_id: projectId,
@@ -1353,12 +1359,18 @@ export async function getProjectOverview(
     );
 
     // Fetch all entity types in parallel for better performance
-    const [experiments, audiences, events, pages] = await Promise.all([
+    const [rawExperiments, rawAudiences, rawEvents, rawPages] = await Promise.all([
       client.listExperiments(projectId, { per_page: 100 }),
       client.listAudiences(projectId, { per_page: 100 }),
       client.listEvents(projectId, { per_page: 100 }),
       client.listPages(projectId, { per_page: 100 }).catch(() => []), // Pages might not exist for all projects
     ]);
+
+    // Apply archived filtering if include_archived is not explicitly true
+    const experiments = rawExperiments;
+    const audiences = params.include_archived ? rawAudiences : rawAudiences.filter((aud) => !aud.archived);
+    const events = params.include_archived ? rawEvents : rawEvents.filter((event) => !event.archived);
+    const pages = params.include_archived ? rawPages : rawPages.filter((page) => !page.archived);
 
     console.log(
       `DEBUG: Retrieved ${experiments.length} experiments, ${audiences.length} audiences, ${events.length} events, ${pages.length} pages`

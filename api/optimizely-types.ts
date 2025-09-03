@@ -150,6 +150,7 @@ export interface ListExperimentsParams {
 export interface ListAudiencesParams {
   projectId: string;
   archived?: boolean;
+  include_archived?: boolean;
   page?: number;
   per_page?: number;
 }
@@ -157,6 +158,7 @@ export interface ListAudiencesParams {
 export interface ListPagesParams {
   projectId: string;
   archived?: boolean;
+  include_archived?: boolean;
   page?: number;
   per_page?: number;
 }
@@ -164,6 +166,7 @@ export interface ListPagesParams {
 export interface ListEventsParams {
   projectId: string;
   archived?: boolean;
+  include_archived?: boolean;
   page?: number;
   per_page?: number;
 }
@@ -390,6 +393,7 @@ export interface FormattedExperimentResults {
 // Project Overview types
 export interface ProjectOverviewParams {
   projectId: string;
+  include_archived?: boolean;
 }
 
 export interface ProjectOverviewSummary {
