@@ -12,8 +12,8 @@ export type UpdateJiraIssueParams = {
 };
 
 export type CreateJiraIssueParams = {
-  project: string;
-  issueType: string;
+  project?: string;
+  issueType?: string;
   summary: string;
   description?: string;
   assignee?: string;
@@ -130,7 +130,7 @@ export async function updateJiraIssue(params: UpdateJiraIssueParams): Promise<Up
 }
 
 export async function createJiraIssue(params: CreateJiraIssueParams): Promise<CreateIssueResult> {
-  const { project, issueType, summary, description, assignee, additionalFields } = params;
+  const { project = "DHK", issueType = "Story", summary, description, assignee, additionalFields } = params;
   
   try {
     const issueData = {

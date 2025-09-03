@@ -320,11 +320,15 @@ tool({
   description: `➕ JIRA ISSUE CREATOR - Create new issues with proper field validation
 
 🎯 REQUIRED FIELDS:
-• project: Project key (e.g., "PROJ")
-• issueType: "Bug", "Task", "Story", "Epic" (project-dependent)
 • summary: Clear, descriptive title
 
+🔧 DEFAULT VALUES:
+• project: Defaults to "DHK" if not specified
+• issueType: Defaults to "Story" if not specified
+
 🔧 OPTIONAL FIELDS:
+• project: Project key (e.g., "PROJ") - defaults to "DHK"
+• issueType: "Bug", "Task", "Story", "Epic" (project-dependent) - defaults to "Story"
 • description: Detailed issue description
 • assignee: Valid Jira username
 • additionalFields: Custom fields as key-value pairs
@@ -339,14 +343,14 @@ tool({
     {
       name: "project",
       type: ParameterType.String,
-      description: "The project key where the issue should be created",
-      required: true,
+      description: "The project key where the issue should be created (defaults to 'DHK')",
+      required: false,
     },
     {
       name: "issueType",
       type: ParameterType.String,
-      description: "The type of issue to create (e.g., 'Bug', 'Task', 'Story')",
-      required: true,
+      description: "The type of issue to create (defaults to 'Story')",
+      required: false,
     },
     {
       name: "summary",

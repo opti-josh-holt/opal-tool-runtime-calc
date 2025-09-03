@@ -67,7 +67,7 @@ async function updateJiraIssue(params) {
     }
 }
 async function createJiraIssue(params) {
-    const { project, issueType, summary, description, assignee, additionalFields } = params;
+    const { project = "DHK", issueType = "Story", summary, description, assignee, additionalFields } = params;
     try {
         const issueData = {
             fields: {
